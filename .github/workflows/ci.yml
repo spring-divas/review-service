@@ -32,6 +32,7 @@ concurrency:
 
 jobs:
   ci:
+    name: Review Service
     uses: spring-divas/common/.github/workflows/java-ci.yml@main
     permissions:
       contents: write
