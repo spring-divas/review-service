@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "\"user\"")
 public class User {
 
   @Id

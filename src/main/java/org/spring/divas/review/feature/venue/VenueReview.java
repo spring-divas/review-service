@@ -18,7 +18,7 @@ import org.spring.divas.review.common.entity.BaseEntity;
 @NoArgsConstructor
 @Entity
 @Table(
-    name = "venue_reviews",
+    name = "venue_review",
     uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "venue_id"})
 )
 public class VenueReview extends BaseEntity {
