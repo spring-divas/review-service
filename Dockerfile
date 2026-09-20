@@ -15,6 +15,6 @@ WORKDIR /workdir
 
 COPY --from=build /workdir/build/libs/app.jar app.jar
 
-EXPOSE 8081
+EXPOSE 8080
 USER 10001:10001
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
