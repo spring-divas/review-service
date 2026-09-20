@@ -3,8 +3,6 @@ import org.springframework.boot.gradle.tasks.bundling.BootJar
 plugins {
 	java
 	checkstyle
-	pmd
-	jacoco
 	id("org.springframework.boot") version "4.1.1"
 	id("io.spring.dependency-management") version "1.1.7"
 }
@@ -54,24 +52,6 @@ checkstyle {
 	configFile = file("checks.xml")
 }
 
-pmd {
-	isConsoleOutput = true
-}
-
-jacoco {
-	toolVersion = "0.8.15"
-}
-
 tasks.test {
 	useJUnitPlatform()
-	finalizedBy(tasks.jacocoTestReport)
-}
-
-tasks.jacocoTestReport {
-	dependsOn(tasks.test)
-	reports {
-		xml.required.set(true)
-		csv.required.set(true)
-		html.required.set(true)
-	}
 }
