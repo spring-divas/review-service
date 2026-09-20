@@ -1,3 +1,5 @@
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
 plugins {
 	java
 	checkstyle
@@ -41,6 +43,10 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testAnnotationProcessor("org.projectlombok:lombok")
 	testImplementation("com.h2database:h2")
+}
+
+tasks.named<BootJar>("bootJar") {
+	archiveFileName.set("app.jar")
 }
 
 checkstyle {
