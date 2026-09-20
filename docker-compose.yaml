@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: ${PROJECT_BASE_NAME}_postgres
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:5431:${POSTGRES_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - review_postgres_data:/var/lib/postgresql
+
+  backend:
+    build: .
+    container_name: ${PROJECT_BASE_NAME}_backend
+    env_file:
+      - .env
+    ports:
+      - "8081:${SERVER_PORT}"
+    restart: on-failure:3
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  review_postgres_data:

@@ -1,0 +1,26 @@
+# VCS / CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# Build output and caches (rebuilt inside the image)
+build
+.gradle
+
+# IDE
+.idea
+*.iml
+
+# Local config and secrets
+.env
+.env.example
+http-client.env.json
+api.http
+
+# Docker / docs
+Dockerfile
+.dockerignore
+docker-compose.yaml
+README.md
+*.log
