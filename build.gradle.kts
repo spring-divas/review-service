@@ -50,6 +50,7 @@ tasks.named<BootJar>("bootJar") {
 checkstyle {
 	toolVersion = "13.7.0"
 	configFile = file("checks.xml")
+	maxWarnings = 0
 }
 
 tasks.test {
