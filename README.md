@@ -15,10 +15,3 @@ cp .env.example .env
 ```bash
 docker compose up -d --build     # build the image and start the compose
 ```
-
-Port mapping — the container ports are fixed, the published host ports come from `.env`:
-
-| Service | Host | Container |
-| --- | --- | --- |
-| backend | `${BACKEND_PORT}` | `8080` |
-| postgres | `127.0.0.1:${POSTGRES_PUBLISHED_PORT}` | `5432` |
