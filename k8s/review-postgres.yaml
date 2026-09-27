@@ -49,32 +49,26 @@ spec:
           startupProbe:
             exec:
               command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
-                - -d
-                - $(POSTGRES_DB)
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
             failureThreshold: 30
             periodSeconds: 2
           livenessProbe:
             exec:
               command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
-                - -d
-                - $(POSTGRES_DB)
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             exec:
               command:
-                - pg_isready
-                - -U
-                - $(POSTGRES_USER)
-                - -d
-                - $(POSTGRES_DB)
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
