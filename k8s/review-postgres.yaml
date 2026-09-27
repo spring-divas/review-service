@@ -12,12 +12,14 @@ spec:
       storage: 500Mi
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: review-postgres
   labels:
     app: review-postgres
 spec:
+  serviceName: review-db
+  replicas: 1
   selector:
     matchLabels:
       app: review-postgres
