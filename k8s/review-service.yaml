@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-service
+  labels:
+    app: review-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: review-service
+  template:
+    metadata:
+      labels:
+        app: review-service
+    spec:
+      containers:
+        - name: review-service
+          image: review-service:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: review-config
+            - secretRef:
+                name: review-secret
+          ports:
+            - containerPort: 8080
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          startupProbe:
+            httpGet:
+              port: 8080
+              path: /api/actuator/health/liveness
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /api/actuator/health/liveness
+            periodSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: /api/actuator/health/readiness
+            periodSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: review-service
+spec:
+  type: ClusterIP
+  selector:
+    app: review-service
+  ports:
+    - port: 8080
+      targetPort: 8080

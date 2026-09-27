@@ -29,3 +29,5 @@ replay_pid*
 .gradle/
 build/
 .idea/
+
+k8s/review-secret.yaml
