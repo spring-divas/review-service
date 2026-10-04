@@ -1,5 +1,7 @@
 package org.spring.divas.review.common.exception;
 
+import io.github.resilience4j.bulkhead.BulkheadFullException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import java.net.http.HttpTimeoutException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -48,6 +50,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     if (ex.contains(HttpTimeoutException.class)) {
       return problem(HttpStatus.GATEWAY_TIMEOUT, "External service did not respond in time");
     }
+    return problem(HttpStatus.SERVICE_UNAVAILABLE, "External service is unavailable");
+  }
+
+  @ExceptionHandler({CallNotPermittedException.class, BulkheadFullException.class})
+  public ProblemDetail handleExternalServiceRejected(RuntimeException ex) {
     return problem(HttpStatus.SERVICE_UNAVAILABLE, "External service is unavailable");
   }
 
