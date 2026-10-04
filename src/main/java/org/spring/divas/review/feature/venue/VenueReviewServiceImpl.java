@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import org.spring.divas.review.common.exception.ResourceAccessDeniedException;
 import org.spring.divas.review.common.exception.ResourceAlreadyExistsException;
 import org.spring.divas.review.common.exception.ResourceNotFoundException;
+import org.spring.divas.review.feature.order.ResilientOrderClient;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
 import org.spring.divas.review.feature.venue.dto.VenueReviewCreateParams;
@@ -24,12 +25,17 @@ public class VenueReviewServiceImpl implements VenueReviewService {
   private final VenueReviewMapper venueReviewMapper;
 
   private final UserService userService;
+  private final ResilientOrderClient orderClient;
 
   @Override
   @Transactional
   public VenueReviewDto create(VenueReviewCreateParams params) { // TODO: check-then-act
     if (venueReviewRepository.existsByUserIdAndVenueId(params.userId(), params.venueId())) {
       throw new ResourceAlreadyExistsException("Review by the user for this venue already exists");
+    }
+    if (!orderClient.hasUserBeenToVenue(params.userId(),
+        params.venueId())) { // TODO: TransactionTemplate
+      throw new VenueNotVisitedException("User cannot review the venue they have not visited");
     }
     VenueReview entityToSave = VenueReviewCreateParams.toEntity(params);
     VenueReview savedEntity = venueReviewRepository.save(entityToSave);
