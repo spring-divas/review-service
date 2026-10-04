@@ -4,6 +4,7 @@ import java.net.http.HttpTimeoutException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,10 +40,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-    return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
-        "Request conflicts with existing data");
     return problem(HttpStatus.CONFLICT, "Request conflicts with existing data");
   }
+
+  @ExceptionHandler(ResourceAccessException.class)
+  public ProblemDetail handleExternalServiceUnavailable(ResourceAccessException ex) {
+    if (ex.contains(HttpTimeoutException.class)) {
+      return problem(HttpStatus.GATEWAY_TIMEOUT, "External service did not respond in time");
+    }
+    return problem(HttpStatus.SERVICE_UNAVAILABLE, "External service is unavailable");
+  }
+
+  @ExceptionHandler(RestClientResponseException.class)
+  public ProblemDetail handleExternalServiceError(RestClientResponseException ex) {
+    return problem(HttpStatus.BAD_GATEWAY, "External service returned an error");
   }
 
   @ExceptionHandler(Exception.class)
@@ -64,6 +75,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     problem.setProperty("errors", errors);
     return handleExceptionInternal(ex, problem, headers, status, request);
   }
+
+  @Override
+  protected ResponseEntity<Object> handleExceptionInternal(
+      @NonNull Exception ex, Object body, @NonNull HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    if (body instanceof ProblemDetail problem) {
+      problem.setProperty("timestamp", Instant.now());
+    }
+    return super.handleExceptionInternal(ex, body, headers, status, request);
+  }
+
   private ProblemDetail problem(HttpStatus status, String detail) {
     var problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
     problemDetail.setTitle(status.getReasonPhrase());
