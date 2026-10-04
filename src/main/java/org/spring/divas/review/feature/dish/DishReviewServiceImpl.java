@@ -10,6 +10,7 @@ import org.spring.divas.review.feature.dish.dto.DishReviewCreateParams;
 import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
 import org.spring.divas.review.feature.dish.dto.DishReviewDto;
 import org.spring.divas.review.feature.dish.dto.DishReviewUpdateParams;
+import org.spring.divas.review.feature.order.ResilientOrderClient;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
 import org.springframework.stereotype.Service;
@@ -24,12 +25,17 @@ public class DishReviewServiceImpl implements DishReviewService {
   private final DishReviewMapper dishReviewMapper;
 
   private final UserService userService;
+  private final ResilientOrderClient orderClient;
 
   @Override
   @Transactional
   public DishReviewDto create(DishReviewCreateParams params) { // TODO: check-then-act
     if (dishReviewRepository.existsByUserIdAndDishId(params.userId(), params.dishId())) {
       throw new ResourceAlreadyExistsException("Review by the user for this dish already exists");
+    }
+    if (!orderClient.hasUserOrderedDish(params.userId(),
+        params.dishId())) { // TODO: TransactionTemplate
+      throw new DishNotOrderedException("User cannot rate the dish they have not ordered");
     }
     DishReview entityToSave = DishReviewCreateParams.toEntity(params);
     DishReview savedEntity = dishReviewRepository.save(entityToSave);
