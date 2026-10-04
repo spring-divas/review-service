@@ -60,6 +60,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   @ExceptionHandler(RestClientResponseException.class)
   public ProblemDetail handleExternalServiceError(RestClientResponseException ex) {
+    if (ex.getStatusCode().is4xxClientError()) {
+      return problem(HttpStatus.INTERNAL_SERVER_ERROR, "External service rejected the request");
+    }
     return problem(HttpStatus.BAD_GATEWAY, "External service returned an error");
   }
 
