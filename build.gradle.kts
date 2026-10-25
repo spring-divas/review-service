@@ -24,6 +24,10 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("org.springframework.boot:spring-boot-restclient")
+	implementation("org.springframework.boot:spring-boot-starter-aspectj")
+
+	implementation("io.github.resilience4j:resilience4j-spring-boot4:2.4.0")
 
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
 
@@ -39,6 +43,7 @@ dependencies {
 	compileOnly("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.wiremock.integrations:wiremock-spring-boot:4.4.2")
 	testCompileOnly("org.projectlombok:lombok")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	testAnnotationProcessor("org.projectlombok:lombok")
