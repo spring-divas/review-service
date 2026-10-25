@@ -26,10 +26,14 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-restclient")
 	implementation("org.springframework.boot:spring-boot-starter-aspectj")
+	implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+	implementation("net.logstash.logback:logstash-logback-encoder:9.0")
 
 	implementation("io.github.resilience4j:resilience4j-spring-boot4:2.4.0")
 
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
 	implementation("org.hibernate.orm:hibernate-core")
 	implementation("org.postgresql:postgresql")
@@ -38,7 +42,6 @@ dependencies {
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
 	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
-
 
 	compileOnly("org.projectlombok:lombok")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
