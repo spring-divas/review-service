@@ -4,3 +4,4 @@ metadata:
   name: review-config
 data:
   SPRING_PROFILE: "dev"
+  OTLP_TRACES_ENDPOINT: "http://otel-collector:4318/v1/traces"

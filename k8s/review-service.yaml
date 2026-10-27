@@ -36,10 +36,11 @@ spec:
 
           startupProbe:
             httpGet:
-              port: 8080
               path: /api/actuator/health/liveness
-            failureThreshold: 30
-            periodSeconds: 2
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 60
           livenessProbe:
             httpGet:
               port: 8080
