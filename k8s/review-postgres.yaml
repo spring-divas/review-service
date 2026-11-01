@@ -28,15 +28,37 @@ spec:
       labels:
         app: review-postgres
     spec:
+      automountServiceAccountToken: false
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+
       containers:
         - name: postgres
           image: postgres:18-alpine
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
           envFrom:
             - secretRef:
                 name: review-secret
+
           volumeMounts:
             - mountPath: /var/lib/postgresql
               name: review-db-data
+            - name: tmp
+              mountPath: /tmp
+            - name: postgres-socket
+              mountPath: /var/run/postgresql
+
           ports:
             - containerPort: 5432
 
@@ -56,6 +78,7 @@ spec:
                 - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
             failureThreshold: 30
             periodSeconds: 2
+
           livenessProbe:
             exec:
               command:
@@ -65,6 +88,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
+
           readinessProbe:
             exec:
               command:
@@ -74,10 +98,17 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
+
       volumes:
         - name: review-db-data
           persistentVolumeClaim:
             claimName: review-postgres-pvc
+
+        - name: tmp
+          emptyDir: {}
+
+        - name: postgres-socket
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
