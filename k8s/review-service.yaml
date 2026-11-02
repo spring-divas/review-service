@@ -14,15 +14,32 @@ spec:
       labels:
         app: review-service
     spec:
+      automountServiceAccountToken: false
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+
       containers:
         - name: review-service
           image: review-service:latest
           imagePullPolicy: IfNotPresent
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
           envFrom:
             - configMapRef:
                 name: review-config
             - secretRef:
                 name: review-secret
+
           ports:
             - containerPort: 8080
 
@@ -41,18 +58,29 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 2
             failureThreshold: 60
+
           livenessProbe:
             httpGet:
               port: 8080
               path: /api/actuator/health/liveness
             periodSeconds: 3
             failureThreshold: 3
+
           readinessProbe:
             httpGet:
               port: 8080
               path: /api/actuator/health/readiness
             periodSeconds: 3
             failureThreshold: 3
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
 ---
 apiVersion: v1
 kind: Service
