@@ -41,7 +41,8 @@ spec:
                 name: review-secret
 
           ports:
-            - containerPort: 8080
+            - name: grpc
+              containerPort: 9090
 
           resources:
             requests:
@@ -91,5 +92,9 @@ spec:
   selector:
     app: review-service
   ports:
-    - port: 8080
+    - name: http
+      port: 8080
       targetPort: 8080
+    - name: grpc
+      port: 9090
+      targetPort: grpc

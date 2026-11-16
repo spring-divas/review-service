@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package org.spring.divas.rating.v1;
+
+option java_multiple_files = true;
+option java_package = "org.spring.divas.rating.v1";
+
+service RatingUpdateService {
+  rpc UpdateDishRating(DishRatingUpdateRequest)
+      returns (google.protobuf.Empty);
+}
+
+import "google/protobuf/empty.proto";
+
+message DishRatingUpdateRequest {
+  int64 id = 1;
+  float rating = 2;
+  int32 review_count = 3;
+}

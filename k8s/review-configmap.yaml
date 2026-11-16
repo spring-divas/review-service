@@ -4,4 +4,5 @@ metadata:
   name: review-config
 data:
   SPRING_PROFILE: "dev"
+  SPRING_GRPC_SERVER_PORT: "9090"
   OTLP_TRACES_ENDPOINT: "http://otel-collector:4318/v1/traces"

@@ -11,6 +11,7 @@ import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
 import org.spring.divas.review.feature.dish.dto.DishReviewDto;
 import org.spring.divas.review.feature.dish.dto.DishReviewUpdateParams;
 import org.spring.divas.review.feature.order.ResilientOrderClient;
+import org.spring.divas.review.feature.rating.RatingGrpcClient;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,8 @@ public class DishReviewServiceImpl implements DishReviewService {
   private final UserService userService;
   private final ResilientOrderClient orderClient;
 
+  private final RatingGrpcClient ratingGrpcClient;
+
   @Override
   @Transactional
   public DishReviewDto create(DishReviewCreateParams params) { // TODO: check-then-act
@@ -39,6 +42,7 @@ public class DishReviewServiceImpl implements DishReviewService {
     }
     DishReview entityToSave = DishReviewCreateParams.toEntity(params);
     DishReview savedEntity = dishReviewRepository.save(entityToSave);
+    updateRating(savedEntity.getDishId());
     return toDto(savedEntity);
   }
 
@@ -75,6 +79,7 @@ public class DishReviewServiceImpl implements DishReviewService {
     review.setContent(params.content());
     review.setRating(params.rating());
 
+    updateRating(review.getDishId());
     return toDto(review);
   }
 
@@ -93,9 +98,20 @@ public class DishReviewServiceImpl implements DishReviewService {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
     }
     dishReviewRepository.deleteById(params.reviewId());
+    updateRating(review.getDishId());
   }
 
   private DishReviewDto toDto(DishReview review) {
     return dishReviewMapper.toDto(review, userService.findById(review.getUserId()).orElse(null));
+  }
+
+  private void updateRating(Long dishId) {
+    Double rating = dishReviewRepository.findAverageRatingByDishId(dishId);
+    long count = dishReviewRepository.countByDishId(dishId);
+    ratingGrpcClient.updateDishRating(
+      dishId,
+        rating.floatValue(),
+          Math.toIntExact(count)
+    );
   }
 }
