@@ -40,9 +40,8 @@ public class RatingSyncJob {
     List<RatingChangedEvent> pending = List.copyOf(changes);
     pending.forEach(changes::remove);
 
-    List<RatingUpdate> updates = pending.stream().map(this::toUpdate).toList();
-
     try {
+      List<RatingUpdate> updates = pending.stream().map(this::toUpdate).toList();
       int updatedCount = venueClient.syncRatings(updates).join();
       log.info("Synced {} ratings to venue-service, {} updated", updates.size(), updatedCount);
     } catch (RuntimeException ex) {
