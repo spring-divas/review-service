@@ -1,10 +1,12 @@
 import org.springframework.boot.gradle.tasks.bundling.BootJar
+import com.google.protobuf.gradle.id
 
 plugins {
 	java
 	checkstyle
 	id("org.springframework.boot") version "4.1.1"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("com.google.protobuf") version "0.9.6"
 }
 
 group = "org.spring.divas"
@@ -28,6 +30,11 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-aspectj")
 	implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework.boot:spring-boot-starter-grpc-client")
+	implementation("io.grpc:grpc-protobuf")
+	implementation("io.grpc:grpc-stub")
+	implementation("com.google.protobuf:protobuf-java:4.36.2")
+	compileOnly("jakarta.annotation:jakarta.annotation-api")
 
 	implementation("net.logstash.logback:logstash-logback-encoder:9.0")
 
@@ -61,6 +68,27 @@ checkstyle {
 	toolVersion = "13.7.0"
 	configFile = file("checks.xml")
 	maxWarnings = 0
+}
+
+tasks.named<Checkstyle>("checkstyleMain") {
+	source = fileTree("src/main/java")
+}
+
+protobuf {
+	protoc {
+		artifact = "com.google.protobuf:protoc:4.36.2"
+	}
+	plugins {
+		id("grpc") {
+			artifact = "io.grpc:protoc-gen-grpc-java:1.84.1"
+		}
+	}
+	generateProtoTasks {
+		all().forEach { task ->
+			task.plugins {
+			}
+		}
+	}
 }
 
 tasks.test {

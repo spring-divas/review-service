@@ -11,8 +11,11 @@ import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
 import org.spring.divas.review.feature.dish.dto.DishReviewDto;
 import org.spring.divas.review.feature.dish.dto.DishReviewUpdateParams;
 import org.spring.divas.review.feature.order.ResilientOrderClient;
+import org.spring.divas.review.feature.rating.RatingChangedEvent;
+import org.spring.divas.review.feature.rating.ReviewTarget;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,8 @@ public class DishReviewServiceImpl implements DishReviewService {
   private final UserService userService;
   private final ResilientOrderClient orderClient;
 
+  private final ApplicationEventPublisher eventPublisher;
+
   @Override
   @Transactional
   public DishReviewDto create(DishReviewCreateParams params) { // TODO: check-then-act
@@ -39,6 +44,7 @@ public class DishReviewServiceImpl implements DishReviewService {
     }
     DishReview entityToSave = DishReviewCreateParams.toEntity(params);
     DishReview savedEntity = dishReviewRepository.save(entityToSave);
+    eventPublisher.publishEvent(ratingChanged(savedEntity));
     return toDto(savedEntity);
   }
 
@@ -74,6 +80,7 @@ public class DishReviewServiceImpl implements DishReviewService {
 
     review.setContent(params.content());
     review.setRating(params.rating());
+    eventPublisher.publishEvent(ratingChanged(review));
 
     return toDto(review);
   }
@@ -93,6 +100,11 @@ public class DishReviewServiceImpl implements DishReviewService {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
     }
     dishReviewRepository.deleteById(params.reviewId());
+    eventPublisher.publishEvent(ratingChanged(review));
+  }
+
+  private RatingChangedEvent ratingChanged(DishReview review) {
+    return new RatingChangedEvent(ReviewTarget.DISH, review.getDishId());
   }
 
   private DishReviewDto toDto(DishReview review) {

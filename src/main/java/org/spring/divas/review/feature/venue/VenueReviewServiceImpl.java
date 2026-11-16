@@ -7,12 +7,15 @@ import org.spring.divas.review.common.exception.ResourceAccessDeniedException;
 import org.spring.divas.review.common.exception.ResourceAlreadyExistsException;
 import org.spring.divas.review.common.exception.ResourceNotFoundException;
 import org.spring.divas.review.feature.order.ResilientOrderClient;
+import org.spring.divas.review.feature.rating.RatingChangedEvent;
+import org.spring.divas.review.feature.rating.ReviewTarget;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
 import org.spring.divas.review.feature.venue.dto.VenueReviewCreateParams;
 import org.spring.divas.review.feature.venue.dto.VenueReviewDeleteParams;
 import org.spring.divas.review.feature.venue.dto.VenueReviewDto;
 import org.spring.divas.review.feature.venue.dto.VenueReviewUpdateParams;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,8 @@ public class VenueReviewServiceImpl implements VenueReviewService {
   private final UserService userService;
   private final ResilientOrderClient orderClient;
 
+  private final ApplicationEventPublisher eventPublisher;
+
   @Override
   @Transactional
   public VenueReviewDto create(VenueReviewCreateParams params) { // TODO: check-then-act
@@ -39,6 +44,7 @@ public class VenueReviewServiceImpl implements VenueReviewService {
     }
     VenueReview entityToSave = VenueReviewCreateParams.toEntity(params);
     VenueReview savedEntity = venueReviewRepository.save(entityToSave);
+    eventPublisher.publishEvent(ratingChanged(savedEntity));
     return toDto(savedEntity);
   }
 
@@ -74,6 +80,7 @@ public class VenueReviewServiceImpl implements VenueReviewService {
 
     review.setContent(params.content());
     review.setRating(params.rating());
+    eventPublisher.publishEvent(ratingChanged(review));
 
     return toDto(review);
   }
@@ -93,6 +100,11 @@ public class VenueReviewServiceImpl implements VenueReviewService {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
     }
     venueReviewRepository.deleteById(params.reviewId());
+    eventPublisher.publishEvent(ratingChanged(review));
+  }
+
+  private RatingChangedEvent ratingChanged(VenueReview review) {
+    return new RatingChangedEvent(ReviewTarget.VENUE, review.getVenueId());
   }
 
   private VenueReviewDto toDto(VenueReview review) {
