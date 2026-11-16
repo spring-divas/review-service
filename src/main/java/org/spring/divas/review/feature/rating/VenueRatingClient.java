@@ -34,6 +34,8 @@ public class VenueRatingClient {
 
       @Override
       public void onCompleted() {
+        updatedCount.completeExceptionally(
+            new IllegalStateException("venue-service closed the stream without a response"));
       }
     });
 
