@@ -22,9 +22,11 @@ public class VenueRatingClient {
     CompletableFuture<Integer> updatedCount = new CompletableFuture<>();
 
     StreamObserver<RatingUpdate> stream = stub.syncRatings(new StreamObserver<>() {
+      private RatingSyncResponse response;
+
       @Override
       public void onNext(RatingSyncResponse response) {
-        updatedCount.complete(response.getUpdatedCount());
+        this.response = response;
       }
 
       @Override
@@ -34,8 +36,12 @@ public class VenueRatingClient {
 
       @Override
       public void onCompleted() {
-        updatedCount.completeExceptionally(
-            new IllegalStateException("venue-service closed the stream without a response"));
+        if (response == null) {
+          updatedCount.completeExceptionally(
+              new IllegalStateException("venue-service closed the stream without a response"));
+          return;
+        }
+        updatedCount.complete(response.getUpdatedCount());
       }
     });
 
