@@ -34,7 +34,7 @@ public class VenueReviewController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public VenueReviewDto create(@RequestBody @Valid VenueReviewCreateRequest request) {
-    VenueReviewCreateParams params = VenueReviewCreateParams.of(request, MOCK_USER_ID);
+    VenueReviewCreateParams params = VenueReviewCreateParams.of(request, request.userId());
     return venueReviewService.create(params);
   }
 
