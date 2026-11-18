@@ -6,17 +6,11 @@ option java_multiple_files = true;
 option java_package = "org.spring.divas.rating.v1";
 
 service RatingSyncService {
-  rpc SyncRatings(stream RatingUpdate) returns (RatingSyncResponse);
-}
-
-enum RatingTarget {
-  RATING_TARGET_UNSPECIFIED = 0;
-  DISH = 1;
-  VENUE = 2;
+  rpc SyncDishRatings(stream RatingUpdate) returns (RatingSyncResponse);
+  rpc UpdateVenueRating(RatingUpdate) returns (RatingSyncResponse);
 }
 
 message RatingUpdate {
-  RatingTarget target = 1;
   int64 target_id = 2;
   double average_rating = 3;
   int32 review_count = 4;

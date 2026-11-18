@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.spring.divas.rating.v1.RatingTarget;
 import org.spring.divas.rating.v1.RatingUpdate;
 import org.spring.divas.review.feature.dish.DishReviewRepository;
 import org.spring.divas.review.feature.venue.VenueReviewRepository;
@@ -41,9 +40,20 @@ public class RatingSyncJob {
     pending.forEach(changes::remove);
 
     try {
-      List<RatingUpdate> updates = pending.stream().map(this::toUpdate).toList();
-      int updatedCount = venueClient.syncRatings(updates).join();
-      log.info("Synced {} ratings to venue-service, {} updated", updates.size(), updatedCount);
+      List<RatingUpdate> dishUpdates = pending.stream()
+              .filter(u -> u.target() == ReviewTarget.DISH)
+              .map(this::toUpdate)
+              .toList();
+
+      List<RatingUpdate> venueUpdates = pending.stream()
+              .filter(u -> u.target() == ReviewTarget.VENUE)
+              .map(this::toUpdate)
+              .toList();
+
+      int updatedDishesCount = venueClient.syncDishRatings(dishUpdates).join();
+      int updatedVenuesCount = venueClient.syncVenueRatings(venueUpdates).join();
+      int updatedCount = updatedDishesCount + updatedVenuesCount;
+      log.info("Synced {} ratings to venue-service, {} updated", pending.size(), updatedCount);
     } catch (RuntimeException ex) {
       log.warn("Rating sync failed, {} ratings will be retried next run", pending.size(), ex);
       changes.addAll(pending);
@@ -56,7 +66,6 @@ public class RatingSyncJob {
       case VENUE -> venueReviewRepository.getRatingStats(change.targetId());
     };
     return RatingUpdate.newBuilder()
-        .setTarget(RatingTarget.valueOf(change.target().name()))
         .setTargetId(stats.targetId())
         .setAverageRating(stats.averageRating())
         .setReviewCount(stats.reviewCount().intValue())

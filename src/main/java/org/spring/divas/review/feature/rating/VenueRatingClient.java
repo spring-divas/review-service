@@ -18,10 +18,10 @@ public class VenueRatingClient {
     this.stub = RatingSyncServiceGrpc.newStub(channelFactory.createChannel("venue"));
   }
 
-  public CompletableFuture<Integer> syncRatings(List<RatingUpdate> updates) {
+  public CompletableFuture<Integer> syncDishRatings(List<RatingUpdate> updates) {
     CompletableFuture<Integer> updatedCount = new CompletableFuture<>();
 
-    StreamObserver<RatingUpdate> stream = stub.syncRatings(new StreamObserver<>() {
+    StreamObserver<RatingUpdate> stream = stub.syncDishRatings(new StreamObserver<>() {
       private RatingSyncResponse response;
 
       @Override
@@ -49,5 +49,40 @@ public class VenueRatingClient {
     stream.onCompleted();
 
     return updatedCount;
+  }
+
+  public CompletableFuture<Integer> syncVenueRatings(List<RatingUpdate> updates) {
+    List<CompletableFuture<Integer>> futures = updates.stream()
+        .map(update -> {
+          CompletableFuture<Integer> future = new CompletableFuture<>();
+
+          stub.updateVenueRating(update, new StreamObserver<>() {
+            @Override
+            public void onNext(RatingSyncResponse response) {
+              future.complete(response.getUpdatedCount());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+              future.completeExceptionally(throwable);
+            }
+
+            @Override
+            public void onCompleted() {
+              if (!future.isDone()) {
+                future.completeExceptionally(
+                  new IllegalStateException("venue-service completed without a response"));
+              }
+            }
+          });
+
+          return future;
+        })
+        .toList();
+
+    return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+            .thenApply(_ -> futures.stream()
+                    .mapToInt(CompletableFuture::join)
+                    .sum());
   }
 }

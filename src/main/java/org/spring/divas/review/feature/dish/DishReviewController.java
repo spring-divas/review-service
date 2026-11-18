@@ -35,7 +35,7 @@ public class DishReviewController {
   @ResponseStatus(HttpStatus.CREATED)
   public DishReviewDto create(@RequestBody @Valid DishReviewCreateRequest request) {
     DishReviewCreateParams params = DishReviewCreateParams.of(
-        request, MOCK_USER_ID
+        request, request.userId()
     );
     return dishReviewService.create(params);
   }
