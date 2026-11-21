@@ -89,9 +89,9 @@ public class DishReviewServiceImpl implements DishReviewService {
   public void delete(DishReviewDeleteParams params) {
     DishReview review = findReview(params.reviewId());
 
-     if (!ownsReview(params.userId(), review)) {
-       throw new ResourceAccessDeniedException("Review does not belong to the user");
-     }
+    if (!ownsReview(params.userId(), review)) {
+      throw new ResourceAccessDeniedException("Review does not belong to the user");
+    }
     dishReviewRepository.deleteById(params.reviewId());
     eventPublisher.publishEvent(ratingChanged(review));
   }
