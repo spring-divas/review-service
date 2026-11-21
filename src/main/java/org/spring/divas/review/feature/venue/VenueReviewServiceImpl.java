@@ -97,9 +97,9 @@ public class VenueReviewServiceImpl implements VenueReviewService {
   public void delete(VenueReviewDeleteParams params) {
     VenueReview review = findReview(params.reviewId());
 
-    // if (!ownsReview(params.userId(), review)) {
-    //   throw new ResourceAccessDeniedException("Review does not belong to the user");
-    // }
+     if (!ownsReview(params.userId(), review)) {
+       throw new ResourceAccessDeniedException("Review does not belong to the user");
+     }
     venueReviewRepository.deleteById(params.reviewId());
     eventPublisher.publishEvent(ratingChanged(review));
   }
