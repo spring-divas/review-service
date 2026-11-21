@@ -50,10 +50,7 @@ public class DishReviewServiceImpl implements DishReviewService {
 
   @Override
   public DishReviewDto getById(Long id) {
-    return dishReviewRepository
-        .findById(id)
-        .map(this::toDto)
-        .orElseThrow(() -> new ResourceNotFoundException("Dish review is not found"));
+    return toDto(findReview(id));
   }
 
   @Override
@@ -70,9 +67,7 @@ public class DishReviewServiceImpl implements DishReviewService {
   @Override
   @Transactional
   public DishReviewDto update(DishReviewUpdateParams params) {
-    DishReview review = dishReviewRepository
-        .findById(params.reviewId())
-        .orElseThrow(() -> new ResourceNotFoundException("Dish review is not found"));
+    DishReview review = findReview(params.reviewId());
 
     if (!ownsReview(params.userId(), review)) {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
@@ -92,19 +87,23 @@ public class DishReviewServiceImpl implements DishReviewService {
   @Override
   @Transactional
   public void delete(DishReviewDeleteParams params) {
-    DishReview review = dishReviewRepository
-        .findById(params.reviewId())
-        .orElseThrow(() -> new ResourceNotFoundException("Dish review is not found"));
+    DishReview review = findReview(params.reviewId());
 
-    // if (!ownsReview(params.userId(), review)) {
-    //   throw new ResourceAccessDeniedException("Review does not belong to the user");
-    // }
+    if (!ownsReview(params.userId(), review)) {
+      throw new ResourceAccessDeniedException("Review does not belong to the user");
+    }
     dishReviewRepository.deleteById(params.reviewId());
     eventPublisher.publishEvent(ratingChanged(review));
   }
 
   private RatingChangedEvent ratingChanged(DishReview review) {
     return new RatingChangedEvent(ReviewTarget.DISH, review.getDishId());
+  }
+
+  private DishReview findReview(Long id) {
+    return dishReviewRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Dish review is not found"));
   }
 
   private DishReviewDto toDto(DishReview review) {
