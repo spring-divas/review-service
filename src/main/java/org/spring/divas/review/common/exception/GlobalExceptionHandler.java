@@ -2,6 +2,7 @@ package org.spring.divas.review.common.exception;
 
 import io.github.resilience4j.bulkhead.BulkheadFullException;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import java.net.http.HttpTimeoutException;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -58,9 +59,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     return problem(HttpStatus.SERVICE_UNAVAILABLE, "External service is unavailable");
   }
 
-  @ExceptionHandler(io.github.resilience4j.ratelimiter.RequestNotPermitted.class)
-  public ProblemDetail handleRateLimitExceeded(io.github.resilience4j.ratelimiter.RequestNotPermitted ex) {
-    return problem(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded. Please try again later.");
+  @ExceptionHandler(RequestNotPermitted.class)
+  public ResponseEntity<ProblemDetail> handleRateLimitExceeded(RequestNotPermitted ex) {
+    return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+        .header(HttpHeaders.RETRY_AFTER, "1")
+        .body(problem(
+            HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded. Please try again later."));
   }
 
   @ExceptionHandler(RestClientResponseException.class)

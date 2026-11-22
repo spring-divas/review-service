@@ -30,3 +30,10 @@ resilience4j:
       orderClient:
         max-concurrent-calls: 20
         max-wait-duration: 100ms
+
+  ratelimiter:
+    instances:
+      reviewApi:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 0s
