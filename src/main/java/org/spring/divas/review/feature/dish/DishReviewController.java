@@ -43,7 +43,7 @@ public class DishReviewController {
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long id) {
-    DishReviewDeleteParams params = new DishReviewDeleteParams(id, MOCK_USER_ID);
+    DishReviewDeleteParams params = new DishReviewDeleteParams(MOCK_USER_ID, id);
     dishReviewService.delete(params);
   }
 }
