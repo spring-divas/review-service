@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.util.UrlPathHelper;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -54,6 +55,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
   }
 
   private static String requestPath(HttpServletRequest request) {
-    return request.getRequestURI().substring(request.getContextPath().length());
+    return UrlPathHelper.defaultInstance.getPathWithinApplication(request);
   }
 }

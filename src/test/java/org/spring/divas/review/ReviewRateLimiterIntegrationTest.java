@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.spring.divas.review.feature.dish.DishReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,9 @@ class ReviewRateLimiterIntegrationTest {
         .andExpect(jsonPath("$.title").value("Too Many Requests"));
 
     mockMvc.perform(get("/actuator/health"))
+        .andExpect(status().is(not(HttpStatus.TOO_MANY_REQUESTS.value())));
+
+    mockMvc.perform(get(URI.create("/%61ctuator/health")))
         .andExpect(status().is(not(HttpStatus.TOO_MANY_REQUESTS.value())));
   }
 
