@@ -15,6 +15,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.venue.dto.VenueReviewCreateParams;
+import org.spring.divas.review.feature.venue.dto.VenueReviewCreateRequest;
 import org.spring.divas.review.feature.venue.dto.VenueReviewDeleteParams;
 import org.spring.divas.review.feature.venue.dto.VenueReviewDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(VenueReviewController.class)
 class VenueReviewControllerTest {
@@ -29,6 +31,8 @@ class VenueReviewControllerTest {
   private static final String URL = "/review/venue";
 
   @Autowired private MockMvc mockMvc;
+
+  @Autowired private JsonMapper jsonMapper;
 
   @MockitoBean private VenueReviewService venueReviewService;
 
@@ -55,28 +59,26 @@ class VenueReviewControllerTest {
     when(venueReviewService.create(new VenueReviewCreateParams(20L, 1L, "Cozy", (short) 4)))
         .thenReturn(dto);
 
+    VenueReviewCreateRequest request = new VenueReviewCreateRequest("Cozy", (short) 4, 20L, 1L);
+
     mockMvc
         .perform(
             post(URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"content": "Cozy", "rating": 4, "venueId": 20, "userId": 1}
-                    """))
+                .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(100));
   }
 
   @Test
   void returns400WithFieldErrorsForInvalidReview() throws Exception {
+    VenueReviewCreateRequest request = new VenueReviewCreateRequest(null, (short) 0, 20L, null);
+
     mockMvc
         .perform(
             post(URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"rating": 0, "venueId": 20}
-                    """))
+                .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors.rating").exists())
         .andExpect(jsonPath("$.errors.userId").exists());

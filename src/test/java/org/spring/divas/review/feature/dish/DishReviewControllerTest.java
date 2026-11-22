@@ -21,6 +21,7 @@ import org.spring.divas.review.common.exception.ResourceAlreadyExistsException;
 import org.spring.divas.review.common.exception.ResourceNotFoundException;
 import org.spring.divas.review.config.CorrelationIdContext;
 import org.spring.divas.review.feature.dish.dto.DishReviewCreateParams;
+import org.spring.divas.review.feature.dish.dto.DishReviewCreateRequest;
 import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
 import org.spring.divas.review.feature.dish.dto.DishReviewDto;
 import org.spring.divas.review.feature.user.UserDto;
@@ -29,6 +30,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(DishReviewController.class)
 class DishReviewControllerTest {
@@ -36,6 +38,8 @@ class DishReviewControllerTest {
   private static final String URL = "/review/dish";
 
   @Autowired private MockMvc mockMvc;
+
+  @Autowired private JsonMapper jsonMapper;
 
   @MockitoBean private DishReviewService dishReviewService;
 
@@ -63,14 +67,13 @@ class DishReviewControllerTest {
     when(dishReviewService.create(new DishReviewCreateParams(10L, 1L, "Tasty", (short) 5)))
         .thenReturn(dto);
 
+    DishReviewCreateRequest request = new DishReviewCreateRequest("Tasty", (short) 5, 10L, 1L);
+
     mockMvc
         .perform(
             post(URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"content": "Tasty", "rating": 5, "dishId": 10, "userId": 1}
-                    """))
+                .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(100))
         .andExpect(jsonPath("$.rating").value(5));
@@ -78,14 +81,13 @@ class DishReviewControllerTest {
 
   @Test
   void returns400WithFieldErrorsForInvalidReview() throws Exception {
+    DishReviewCreateRequest request = new DishReviewCreateRequest(null, (short) 7, null, 1L);
+
     mockMvc
         .perform(
             post(URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"rating": 7, "userId": 1}
-                    """))
+                .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.detail").value("Validation failed"))
         .andExpect(jsonPath("$.errors.rating").exists())
@@ -100,14 +102,13 @@ class DishReviewControllerTest {
     when(dishReviewService.create(any()))
         .thenThrow(new ResourceAlreadyExistsException("Review already exists"));
 
+    DishReviewCreateRequest request = new DishReviewCreateRequest("Again", (short) 4, 10L, 1L);
+
     mockMvc
         .perform(
             post(URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
-                    {"content": "Again", "rating": 4, "dishId": 10, "userId": 1}
-                    """))
+                .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.title").value("Conflict"))
         .andExpect(jsonPath("$.detail").value("Review already exists"));
