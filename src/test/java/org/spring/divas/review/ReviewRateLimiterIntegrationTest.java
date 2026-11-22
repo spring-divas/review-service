@@ -27,7 +27,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @AutoConfigureMockMvc
 class ReviewRateLimiterIntegrationTest {
 
-  private static final String DISH_REVIEW_JSON = """
+  private static final String DISH_REVIEW_JSON =
+      """
       {"content": "Tasty", "rating": 5, "dishId": 1, "userId": 1}
       """;
 
