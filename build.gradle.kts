@@ -62,6 +62,7 @@ dependencies {
 	testImplementation("org.wiremock.integrations:wiremock-spring-boot:$wiremockSpringBootVersion")
 	testImplementation("com.h2database:h2")
 	testImplementation("org.awaitility:awaitility")
+	testImplementation("au.com.dius.pact.consumer:junit5:4.7.5")
 
 	testCompileOnly("org.projectlombok:lombok")
 
@@ -103,4 +104,8 @@ protobuf {
 
 tasks.test {
 	useJUnitPlatform()
+	systemProperty(
+		"pact.rootDir",
+		System.getProperty("pact.rootDir", project.file("../common/contract/pact").absolutePath)
+	)
 }
