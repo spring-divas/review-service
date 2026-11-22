@@ -12,9 +12,11 @@ import java.io.IOException;
 import java.net.http.HttpTimeoutException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 
@@ -98,10 +100,12 @@ class GlobalExceptionHandlerTest {
     RequestNotPermitted ex =
         RequestNotPermitted.createRequestNotPermitted(RateLimiter.ofDefaults("orderClient"));
 
-    ProblemDetail problem = handler.handleRateLimitExceeded(ex);
+    ResponseEntity<ProblemDetail> response = handler.handleRateLimitExceeded(ex);
 
+    assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("1");
     assertProblem(
-        problem, HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded. Please try again later.");
+        response.getBody(), HttpStatus.TOO_MANY_REQUESTS,
+        "Rate limit exceeded. Please try again later.");
   }
 
   @Test

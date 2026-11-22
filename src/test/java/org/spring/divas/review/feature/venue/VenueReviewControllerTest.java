@@ -13,15 +13,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.spring.divas.review.config.RateLimitFilter;
 import org.spring.divas.review.feature.user.UserDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
-@WebMvcTest(VenueReviewController.class)
+@WebMvcTest(
+    controllers = VenueReviewController.class,
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE, classes = RateLimitFilter.class)
+)
 class VenueReviewControllerTest {
 
   private static final String URL = "/review/venue";
