@@ -8,8 +8,16 @@ import org.springframework.web.service.annotation.HttpExchange;
 public interface OrderClient {
 
   @GetExchange("/exists/dish")
-  boolean hasUserOrderedDish(@RequestParam Long userId, @RequestParam Long dishId);
+  boolean hasUserOrderedDish(@RequestParam Long dishId);
+
+  default boolean hasUserOrderedDish(Long ignoredUserId, Long dishId) {
+    return hasUserOrderedDish(dishId);
+  }
 
   @GetExchange("/exists/venue")
-  boolean hasUserBeenToVenue(@RequestParam Long userId, @RequestParam Long venueId);
+  boolean hasUserBeenToVenue(@RequestParam Long venueId);
+
+  default boolean hasUserBeenToVenue(Long ignoredUserId, Long venueId) {
+    return hasUserBeenToVenue(venueId);
+  }
 }
