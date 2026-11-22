@@ -34,6 +34,8 @@ jobs:
   ci:
     name: Review Service
     uses: spring-divas/common/.github/workflows/java-ci.yml@main
+    with:
+      fetch_pact_contracts: true
     permissions:
       contents: write
       checks: write
