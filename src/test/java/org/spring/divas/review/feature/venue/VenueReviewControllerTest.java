@@ -14,10 +14,6 @@ import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.spring.divas.review.feature.user.UserDto;
-import org.spring.divas.review.feature.venue.dto.VenueReviewCreateParams;
-import org.spring.divas.review.feature.venue.dto.VenueReviewCreateRequest;
-import org.spring.divas.review.feature.venue.dto.VenueReviewDeleteParams;
-import org.spring.divas.review.feature.venue.dto.VenueReviewDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -38,8 +34,8 @@ class VenueReviewControllerTest {
 
   @Test
   void returnsAllReviews() throws Exception {
-    VenueReviewDto dto =
-        new VenueReviewDto(
+    VenueReviewResponseDto dto =
+        new VenueReviewResponseDto(
             100L, new UserDto(1L, "Alice Smith"), "Cozy", (short) 4, 20L, LocalDate.of(2026, 1, 2));
     when(venueReviewService.getAll()).thenReturn(List.of(dto));
 
@@ -53,13 +49,13 @@ class VenueReviewControllerTest {
 
   @Test
   void returns201WithCreatedReview() throws Exception {
-    VenueReviewDto dto =
-        new VenueReviewDto(
+    VenueReviewResponseDto dto =
+        new VenueReviewResponseDto(
             100L, new UserDto(1L, "Alice Smith"), "Cozy", (short) 4, 20L, LocalDate.of(2026, 1, 2));
-    when(venueReviewService.create(new VenueReviewCreateParams(20L, 1L, "Cozy", (short) 4)))
+    when(venueReviewService.create(new VenueReviewRequestDto("Cozy", (short) 4, 20L, 1L)))
         .thenReturn(dto);
 
-    VenueReviewCreateRequest request = new VenueReviewCreateRequest("Cozy", (short) 4, 20L, 1L);
+    VenueReviewRequestDto request = new VenueReviewRequestDto("Cozy", (short) 4, 20L, 1L);
 
     mockMvc
         .perform(
@@ -72,7 +68,7 @@ class VenueReviewControllerTest {
 
   @Test
   void returns400WithFieldErrorsForInvalidReview() throws Exception {
-    VenueReviewCreateRequest request = new VenueReviewCreateRequest(null, (short) 0, 20L, null);
+    VenueReviewRequestDto request = new VenueReviewRequestDto(null, (short) 0, 20L, null);
 
     mockMvc
         .perform(
@@ -99,6 +95,6 @@ class VenueReviewControllerTest {
   void deletesReviewOfCurrentUser() throws Exception {
     mockMvc.perform(delete(URL + "/5")).andExpect(status().isNoContent());
 
-    verify(venueReviewService).delete(new VenueReviewDeleteParams(1L, 5L));
+    verify(venueReviewService).delete(5L, 1L);
   }
 }

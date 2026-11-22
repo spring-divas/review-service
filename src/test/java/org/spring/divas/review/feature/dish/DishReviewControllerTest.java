@@ -20,10 +20,6 @@ import org.spring.divas.review.common.exception.ResourceAccessDeniedException;
 import org.spring.divas.review.common.exception.ResourceAlreadyExistsException;
 import org.spring.divas.review.common.exception.ResourceNotFoundException;
 import org.spring.divas.review.config.CorrelationIdContext;
-import org.spring.divas.review.feature.dish.dto.DishReviewCreateParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewCreateRequest;
-import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewDto;
 import org.spring.divas.review.feature.user.UserDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -45,8 +41,8 @@ class DishReviewControllerTest {
 
   @Test
   void returnsAllReviews() throws Exception {
-    DishReviewDto dto =
-        new DishReviewDto(
+    DishReviewResponseDto dto =
+        new DishReviewResponseDto(
             100L, new UserDto(1L, "John Doe"), "Tasty", (short) 5, 10L, LocalDate.of(2026, 1, 2));
     when(dishReviewService.getAll()).thenReturn(List.of(dto));
 
@@ -61,13 +57,13 @@ class DishReviewControllerTest {
 
   @Test
   void returns201WithCreatedReview() throws Exception {
-    DishReviewDto dto =
-        new DishReviewDto(
+    DishReviewResponseDto dto =
+        new DishReviewResponseDto(
             100L, new UserDto(1L, "John Doe"), "Tasty", (short) 5, 10L, LocalDate.of(2026, 1, 2));
-    when(dishReviewService.create(new DishReviewCreateParams(10L, 1L, "Tasty", (short) 5)))
+    when(dishReviewService.create(new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L)))
         .thenReturn(dto);
 
-    DishReviewCreateRequest request = new DishReviewCreateRequest("Tasty", (short) 5, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L);
 
     mockMvc
         .perform(
@@ -81,7 +77,7 @@ class DishReviewControllerTest {
 
   @Test
   void returns400WithFieldErrorsForInvalidReview() throws Exception {
-    DishReviewCreateRequest request = new DishReviewCreateRequest(null, (short) 7, null, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto(null, (short) 7, null, 1L);
 
     mockMvc
         .perform(
@@ -102,7 +98,7 @@ class DishReviewControllerTest {
     when(dishReviewService.create(any()))
         .thenThrow(new ResourceAlreadyExistsException("Review already exists"));
 
-    DishReviewCreateRequest request = new DishReviewCreateRequest("Again", (short) 4, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Again", (short) 4, 10L, 1L);
 
     mockMvc
         .perform(
@@ -118,14 +114,14 @@ class DishReviewControllerTest {
   void deletesReviewOfCurrentUser() throws Exception {
     mockMvc.perform(delete(URL + "/5")).andExpect(status().isNoContent());
 
-    verify(dishReviewService).delete(new DishReviewDeleteParams(1L, 5L));
+    verify(dishReviewService).delete(5L, 1L);
   }
 
   @Test
   void returns404WhenReviewIsMissing() throws Exception {
     doThrow(new ResourceNotFoundException("Dish review is not found"))
         .when(dishReviewService)
-        .delete(any());
+        .delete(any(), any());
 
     mockMvc
         .perform(delete(URL + "/5"))
@@ -137,7 +133,7 @@ class DishReviewControllerTest {
   void returns403WhenDeletingSomeoneElsesReview() throws Exception {
     doThrow(new ResourceAccessDeniedException("Review does not belong to the user"))
         .when(dishReviewService)
-        .delete(any());
+        .delete(any(), any());
 
     mockMvc.perform(delete(URL + "/5")).andExpect(status().isForbidden());
   }

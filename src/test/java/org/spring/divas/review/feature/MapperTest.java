@@ -6,13 +6,15 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.spring.divas.review.feature.dish.DishReview;
 import org.spring.divas.review.feature.dish.DishReviewMapperImpl;
-import org.spring.divas.review.feature.dish.dto.DishReviewDto;
+import org.spring.divas.review.feature.dish.DishReviewRequestDto;
+import org.spring.divas.review.feature.dish.DishReviewResponseDto;
 import org.spring.divas.review.feature.user.User;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserMapperImpl;
 import org.spring.divas.review.feature.venue.VenueReview;
 import org.spring.divas.review.feature.venue.VenueReviewMapperImpl;
-import org.spring.divas.review.feature.venue.dto.VenueReviewDto;
+import org.spring.divas.review.feature.venue.VenueReviewRequestDto;
+import org.spring.divas.review.feature.venue.VenueReviewResponseDto;
 
 class MapperTest {
 
@@ -32,16 +34,17 @@ class MapperTest {
             .createdAt(CREATED_AT)
             .build();
 
-    DishReviewDto dto = new DishReviewMapperImpl().toDto(review, USER);
+    DishReviewResponseDto dto = new DishReviewMapperImpl().toDto(review, USER);
 
-    assertThat(dto).isEqualTo(new DishReviewDto(100L, USER, "Tasty", (short) 5, 10L, CREATED_AT));
+    assertThat(dto)
+        .isEqualTo(new DishReviewResponseDto(100L, USER, "Tasty", (short) 5, 10L, CREATED_AT));
   }
 
   @Test
   void mapsDishReviewWithoutUser() {
     DishReview review = DishReview.builder().id(100L).dishId(10L).rating((short) 5).build();
 
-    DishReviewDto dto = new DishReviewMapperImpl().toDto(review, null);
+    DishReviewResponseDto dto = new DishReviewMapperImpl().toDto(review, null);
 
     assertThat(dto.id()).isEqualTo(100L);
     assertThat(dto.user()).isNull();
@@ -64,14 +67,15 @@ class MapperTest {
             .createdAt(CREATED_AT)
             .build();
 
-    VenueReviewDto dto = new VenueReviewMapperImpl().toDto(review, USER);
+    VenueReviewResponseDto dto = new VenueReviewMapperImpl().toDto(review, USER);
 
-    assertThat(dto).isEqualTo(new VenueReviewDto(100L, USER, "Cozy", (short) 4, 20L, CREATED_AT));
+    assertThat(dto)
+        .isEqualTo(new VenueReviewResponseDto(100L, USER, "Cozy", (short) 4, 20L, CREATED_AT));
   }
 
   @Test
   void mapsUserWithoutVenueReview() {
-    VenueReviewDto dto = new VenueReviewMapperImpl().toDto(null, USER);
+    VenueReviewResponseDto dto = new VenueReviewMapperImpl().toDto(null, USER);
 
     assertThat(dto.user()).isEqualTo(USER);
     assertThat(dto.id()).isNull();
@@ -92,5 +96,31 @@ class MapperTest {
   @Test
   void mapsMissingUserToNull() {
     assertThat(new UserMapperImpl().toDto(null)).isNull();
+  }
+
+  @Test
+  void mapsDishReviewRequestToEntity() {
+    DishReview review =
+        new DishReviewMapperImpl()
+            .toEntity(new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L));
+
+    assertThat(review.getId()).isNull();
+    assertThat(review.getContent()).isEqualTo("Tasty");
+    assertThat(review.getRating()).isEqualTo((short) 5);
+    assertThat(review.getDishId()).isEqualTo(10L);
+    assertThat(review.getUserId()).isEqualTo(1L);
+  }
+
+  @Test
+  void mapsVenueReviewRequestToEntity() {
+    VenueReview review =
+        new VenueReviewMapperImpl()
+            .toEntity(new VenueReviewRequestDto("Cozy", (short) 4, 20L, 1L));
+
+    assertThat(review.getId()).isNull();
+    assertThat(review.getContent()).isEqualTo("Cozy");
+    assertThat(review.getRating()).isEqualTo((short) 4);
+    assertThat(review.getVenueId()).isEqualTo(20L);
+    assertThat(review.getUserId()).isEqualTo(1L);
   }
 }

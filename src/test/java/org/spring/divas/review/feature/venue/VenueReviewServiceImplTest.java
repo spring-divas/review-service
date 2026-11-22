@@ -25,10 +25,6 @@ import org.spring.divas.review.common.rating.RatingChangedEvent;
 import org.spring.divas.review.feature.order.ResilientOrderClient;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
-import org.spring.divas.review.feature.venue.dto.VenueReviewCreateParams;
-import org.spring.divas.review.feature.venue.dto.VenueReviewDeleteParams;
-import org.spring.divas.review.feature.venue.dto.VenueReviewDto;
-import org.spring.divas.review.feature.venue.dto.VenueReviewUpdateParams;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.TransactionStatus;
@@ -66,8 +62,8 @@ class VenueReviewServiceImplTest {
 
   @Test
   void savesReviewAndPublishesRatingChange() {
-    final VenueReviewCreateParams params =
-        new VenueReviewCreateParams(20L, 1L, "Great atmosphere", (short) 5);
+    final VenueReviewRequestDto request =
+        new VenueReviewRequestDto("Great atmosphere", (short) 5, 20L, 1L);
     final VenueReview entity =
         VenueReview.builder()
             .id(100L)
@@ -77,45 +73,47 @@ class VenueReviewServiceImplTest {
             .content("Great atmosphere")
             .build();
     UserDto userDto = new UserDto(1L, "Alice Smith");
-    final VenueReviewDto responseDto =
-        new VenueReviewDto(100L, userDto, "Great atmosphere", (short) 5, 20L, LocalDate.now());
+    final VenueReviewResponseDto responseDto =
+        new VenueReviewResponseDto(
+            100L, userDto, "Great atmosphere", (short) 5, 20L, LocalDate.now());
 
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(false);
     when(orderClient.hasUserBeenToVenue(1L, 20L)).thenReturn(true);
     runTransactionCallback();
-    when(venueReviewRepository.saveAndFlush(any(VenueReview.class))).thenReturn(entity);
+    when(venueReviewMapper.toEntity(request)).thenReturn(entity);
+    when(venueReviewRepository.saveAndFlush(entity)).thenReturn(entity);
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(venueReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    VenueReviewDto result = service.create(params);
+    VenueReviewResponseDto result = service.create(request);
 
     assertThat(result).isEqualTo(responseDto);
-    verify(venueReviewRepository).saveAndFlush(any(VenueReview.class));
     verify(eventPublisher).publishEvent(any(RatingChangedEvent.class));
   }
 
   @Test
   void rejectsSecondReviewBySameUser() {
-    VenueReviewCreateParams params = new VenueReviewCreateParams(20L, 1L, "Duplicate", (short) 5);
+    VenueReviewRequestDto request = new VenueReviewRequestDto("Duplicate", (short) 5, 20L, 1L);
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(true);
 
-    assertThatThrownBy(() -> service.create(params))
+    assertThatThrownBy(() -> service.create(request))
         .isInstanceOf(ResourceAlreadyExistsException.class)
         .hasMessage("Review by the user for this venue already exists");
   }
 
   @Test
   void rejectsConcurrentDuplicateReview() {
-    final VenueReviewCreateParams params =
-        new VenueReviewCreateParams(20L, 1L, "Concurrent duplicate", (short) 5);
+    final VenueReviewRequestDto request =
+        new VenueReviewRequestDto("Concurrent duplicate", (short) 5, 20L, 1L);
 
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(false);
     when(orderClient.hasUserBeenToVenue(1L, 20L)).thenReturn(true);
     runTransactionCallback();
+    when(venueReviewMapper.toEntity(request)).thenReturn(new VenueReview());
     when(venueReviewRepository.saveAndFlush(any(VenueReview.class)))
         .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-    assertThatThrownBy(() -> service.create(params))
+    assertThatThrownBy(() -> service.create(request))
         .isInstanceOf(ResourceAlreadyExistsException.class)
         .hasMessage("Review by the user for this venue already exists");
     verifyNoInteractions(eventPublisher);
@@ -123,11 +121,11 @@ class VenueReviewServiceImplTest {
 
   @Test
   void rejectsReviewOfVenueNotVisited() {
-    VenueReviewCreateParams params = new VenueReviewCreateParams(20L, 1L, "Not visited", (short) 5);
+    VenueReviewRequestDto request = new VenueReviewRequestDto("Not visited", (short) 5, 20L, 1L);
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(false);
     when(orderClient.hasUserBeenToVenue(1L, 20L)).thenReturn(false);
 
-    assertThatThrownBy(() -> service.create(params))
+    assertThatThrownBy(() -> service.create(request))
         .isInstanceOf(VenueNotVisitedException.class)
         .hasMessage("User cannot review the venue they have not visited");
   }
@@ -143,14 +141,14 @@ class VenueReviewServiceImplTest {
             .content("Great")
             .build();
     UserDto userDto = new UserDto(1L, "Alice Smith");
-    VenueReviewDto responseDto =
-        new VenueReviewDto(100L, userDto, "Great", (short) 5, 20L, LocalDate.now());
+    VenueReviewResponseDto responseDto =
+        new VenueReviewResponseDto(100L, userDto, "Great", (short) 5, 20L, LocalDate.now());
 
     when(venueReviewRepository.findById(100L)).thenReturn(Optional.of(entity));
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(venueReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    VenueReviewDto result = service.getById(100L);
+    VenueReviewResponseDto result = service.getById(100L);
 
     assertThat(result).isEqualTo(responseDto);
   }
@@ -175,14 +173,14 @@ class VenueReviewServiceImplTest {
             .content("Great")
             .build();
     UserDto userDto = new UserDto(1L, "Alice Smith");
-    VenueReviewDto responseDto =
-        new VenueReviewDto(100L, userDto, "Great", (short) 5, 20L, LocalDate.now());
+    VenueReviewResponseDto responseDto =
+        new VenueReviewResponseDto(100L, userDto, "Great", (short) 5, 20L, LocalDate.now());
 
     when(venueReviewRepository.findAll()).thenReturn(List.of(entity));
     when(userService.getByIds(List.of(1L))).thenReturn(Map.of(1L, userDto));
     when(venueReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    List<VenueReviewDto> result = service.getAll();
+    List<VenueReviewResponseDto> result = service.getAll();
 
     assertThat(result).containsExactly(responseDto);
   }
@@ -197,17 +195,17 @@ class VenueReviewServiceImplTest {
             .rating((short) 3)
             .content("Ok")
             .build();
-    VenueReviewUpdateParams params =
-        new VenueReviewUpdateParams(100L, "Much better", (short) 4, 1L);
+    VenueReviewRequestDto request =
+        new VenueReviewRequestDto("Much better", (short) 4, 20L, 1L);
     UserDto userDto = new UserDto(1L, "Alice Smith");
-    VenueReviewDto responseDto =
-        new VenueReviewDto(100L, userDto, "Much better", (short) 4, 20L, LocalDate.now());
+    VenueReviewResponseDto responseDto =
+        new VenueReviewResponseDto(100L, userDto, "Much better", (short) 4, 20L, LocalDate.now());
 
     when(venueReviewRepository.findById(100L)).thenReturn(Optional.of(entity));
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(venueReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    VenueReviewDto result = service.update(params);
+    VenueReviewResponseDto result = service.update(100L, request);
 
     assertThat(result).isEqualTo(responseDto);
     assertThat(entity.getRating()).isEqualTo((short) 4);
@@ -225,12 +223,12 @@ class VenueReviewServiceImplTest {
             .rating((short) 3)
             .content("Ok")
             .build();
-    VenueReviewUpdateParams params =
-        new VenueReviewUpdateParams(100L, "Much better", (short) 4, 1L);
+    VenueReviewRequestDto request =
+        new VenueReviewRequestDto("Much better", (short) 4, 20L, 1L);
 
     when(venueReviewRepository.findById(100L)).thenReturn(Optional.of(entity));
 
-    assertThatThrownBy(() -> service.update(params))
+    assertThatThrownBy(() -> service.update(100L, request))
         .isInstanceOf(ResourceAccessDeniedException.class)
         .hasMessage("Review does not belong to the user");
   }
@@ -239,11 +237,10 @@ class VenueReviewServiceImplTest {
   void deletesOwnReviewAndPublishesRatingChange() {
     VenueReview entity =
         VenueReview.builder().id(100L).userId(1L).venueId(20L).rating((short) 5).build();
-    VenueReviewDeleteParams params = new VenueReviewDeleteParams(1L, 100L);
 
     when(venueReviewRepository.findById(100L)).thenReturn(Optional.of(entity));
 
-    service.delete(params);
+    service.delete(100L, 1L);
 
     verify(venueReviewRepository).deleteById(100L);
     verify(eventPublisher).publishEvent(any(RatingChangedEvent.class));
@@ -253,11 +250,10 @@ class VenueReviewServiceImplTest {
   void rejectsDeletionByNonOwner() {
     VenueReview entity =
         VenueReview.builder().id(100L).userId(2L).venueId(10L).rating((short) 5).build();
-    VenueReviewDeleteParams params = new VenueReviewDeleteParams(1L, 100L);
 
     when(venueReviewRepository.findById(100L)).thenReturn(Optional.of(entity));
 
-    assertThatThrownBy(() -> service.delete(params))
+    assertThatThrownBy(() -> service.delete(100L, 1L))
         .isInstanceOf(ResourceAccessDeniedException.class)
         .hasMessage("Review does not belong to the user");
     verify(venueReviewRepository, never()).deleteById(any());
@@ -266,11 +262,10 @@ class VenueReviewServiceImplTest {
 
   @Test
   void rejectsDeletionOfMissingReview() {
-    VenueReviewDeleteParams params = new VenueReviewDeleteParams(1L, 99L);
 
     when(venueReviewRepository.findById(99L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.delete(params))
+    assertThatThrownBy(() -> service.delete(99L, 1L))
         .isInstanceOf(ResourceNotFoundException.class)
         .hasMessage("Venue review is not found");
     verify(venueReviewRepository, never()).deleteById(any());

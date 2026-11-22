@@ -3,10 +3,6 @@ package org.spring.divas.review.feature.dish;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.AllArgsConstructor;
-import org.spring.divas.review.feature.dish.dto.DishReviewCreateParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewCreateRequest;
-import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,23 +23,19 @@ public class DishReviewController {
   private final DishReviewService dishReviewService;
 
   @GetMapping
-  public List<DishReviewDto> getAll() {
+  public List<DishReviewResponseDto> getAll() {
     return dishReviewService.getAll();
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public DishReviewDto create(@RequestBody @Valid DishReviewCreateRequest request) {
-    DishReviewCreateParams params = DishReviewCreateParams.of(
-        request, request.userId()
-    );
-    return dishReviewService.create(params);
+  public DishReviewResponseDto create(@RequestBody @Valid DishReviewRequestDto dto) {
+    return dishReviewService.create(dto);
   }
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void delete(@PathVariable Long id) {
-    DishReviewDeleteParams params = new DishReviewDeleteParams(MOCK_USER_ID, id);
-    dishReviewService.delete(params);
+    dishReviewService.delete(id, MOCK_USER_ID);
   }
 }
