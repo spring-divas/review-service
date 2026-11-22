@@ -1,20 +1,16 @@
 package org.spring.divas.review.feature.dish;
 
 import java.util.List;
-import org.spring.divas.review.feature.dish.dto.DishReviewCreateParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewDto;
-import org.spring.divas.review.feature.dish.dto.DishReviewUpdateParams;
 
 public interface DishReviewService {
 
-  DishReviewDto create(DishReviewCreateParams params);
+  DishReviewResponseDto create(DishReviewRequestDto dto);
 
-  DishReviewDto getById(Long id);
+  DishReviewResponseDto getById(Long id);
 
-  List<DishReviewDto> getAll();
+  List<DishReviewResponseDto> getAll();
 
-  DishReviewDto update(DishReviewUpdateParams params);
+  DishReviewResponseDto update(Long id, DishReviewRequestDto dto);
 
-  void delete(DishReviewDeleteParams params);
+  void delete(Long id, Long userId);
 }

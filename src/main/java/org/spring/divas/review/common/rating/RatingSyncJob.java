@@ -1,4 +1,4 @@
-package org.spring.divas.review.feature.rating;
+package org.spring.divas.review.common.rating;
 
 import java.util.List;
 import java.util.Set;

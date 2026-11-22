@@ -6,13 +6,9 @@ import lombok.AllArgsConstructor;
 import org.spring.divas.review.common.exception.ResourceAccessDeniedException;
 import org.spring.divas.review.common.exception.ResourceAlreadyExistsException;
 import org.spring.divas.review.common.exception.ResourceNotFoundException;
-import org.spring.divas.review.feature.dish.dto.DishReviewCreateParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewDeleteParams;
-import org.spring.divas.review.feature.dish.dto.DishReviewDto;
-import org.spring.divas.review.feature.dish.dto.DishReviewUpdateParams;
+import org.spring.divas.review.common.rating.RatingChangedEvent;
+import org.spring.divas.review.common.rating.ReviewTarget;
 import org.spring.divas.review.feature.order.ResilientOrderClient;
-import org.spring.divas.review.feature.rating.RatingChangedEvent;
-import org.spring.divas.review.feature.rating.ReviewTarget;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,27 +30,27 @@ public class DishReviewServiceImpl implements DishReviewService {
 
   @Override
   @Transactional
-  public DishReviewDto create(DishReviewCreateParams params) { // TODO: check-then-act
-    if (dishReviewRepository.existsByUserIdAndDishId(params.userId(), params.dishId())) {
+  public DishReviewResponseDto create(DishReviewRequestDto dto) { // TODO: check-then-act
+    if (dishReviewRepository.existsByUserIdAndDishId(dto.userId(), dto.dishId())) {
       throw new ResourceAlreadyExistsException("Review by the user for this dish already exists");
     }
-    if (!orderClient.hasUserOrderedDish(params.userId(),
-        params.dishId())) { // TODO: TransactionTemplate
+    if (!orderClient.hasUserOrderedDish(dto.userId(),
+        dto.dishId())) { // TODO: TransactionTemplate
       throw new DishNotOrderedException("User cannot rate the dish they have not ordered");
     }
-    DishReview entityToSave = DishReviewCreateParams.toEntity(params);
+    DishReview entityToSave = dishReviewMapper.toEntity(dto);
     DishReview savedEntity = dishReviewRepository.save(entityToSave);
     eventPublisher.publishEvent(ratingChanged(savedEntity));
     return toDto(savedEntity);
   }
 
   @Override
-  public DishReviewDto getById(Long id) {
+  public DishReviewResponseDto getById(Long id) {
     return toDto(findReview(id));
   }
 
   @Override
-  public List<DishReviewDto> getAll() {
+  public List<DishReviewResponseDto> getAll() {
     List<DishReview> reviews = dishReviewRepository.findAll();
     Map<Long, UserDto> users = userService.getByIds(
         reviews.stream().map(DishReview::getUserId).distinct().toList()
@@ -66,15 +62,15 @@ public class DishReviewServiceImpl implements DishReviewService {
 
   @Override
   @Transactional
-  public DishReviewDto update(DishReviewUpdateParams params) {
-    DishReview review = findReview(params.reviewId());
+  public DishReviewResponseDto update(Long id, DishReviewRequestDto dto) {
+    DishReview review = findReview(id);
 
-    if (!ownsReview(params.userId(), review)) {
+    if (!ownsReview(dto.userId(), review)) {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
     }
 
-    review.setContent(params.content());
-    review.setRating(params.rating());
+    review.setContent(dto.content());
+    review.setRating(dto.rating());
     eventPublisher.publishEvent(ratingChanged(review));
 
     return toDto(review);
@@ -86,13 +82,13 @@ public class DishReviewServiceImpl implements DishReviewService {
 
   @Override
   @Transactional
-  public void delete(DishReviewDeleteParams params) {
-    DishReview review = findReview(params.reviewId());
+  public void delete(Long id, Long userId) {
+    DishReview review = findReview(id);
 
-    if (!ownsReview(params.userId(), review)) {
+    if (!ownsReview(userId, review)) {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
     }
-    dishReviewRepository.deleteById(params.reviewId());
+    dishReviewRepository.deleteById(id);
     eventPublisher.publishEvent(ratingChanged(review));
   }
 
@@ -106,7 +102,7 @@ public class DishReviewServiceImpl implements DishReviewService {
         .orElseThrow(() -> new ResourceNotFoundException("Dish review is not found"));
   }
 
-  private DishReviewDto toDto(DishReview review) {
+  private DishReviewResponseDto toDto(DishReview review) {
     return dishReviewMapper.toDto(review, userService.findById(review.getUserId()).orElse(null));
   }
 }

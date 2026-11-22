@@ -1,14 +1,14 @@
-package org.spring.divas.review.feature.dish.dto;
+package org.spring.divas.review.feature.venue;
 
 import java.time.LocalDate;
 import org.spring.divas.review.feature.user.UserDto;
 
-public record DishReviewDto(
+public record VenueReviewResponseDto(
     Long id,
     UserDto user,
     String content,
     Short rating,
-    Long dishId,
+    Long venueId,
     LocalDate createdAt
 ) {
 
