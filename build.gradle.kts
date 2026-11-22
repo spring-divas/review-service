@@ -37,6 +37,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-restclient")
 	implementation("org.springframework.boot:spring-boot-starter-aspectj")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("de.codecentric:chaos-monkey-spring-boot:4.0.0")
 	implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
 	implementation("org.springframework.boot:spring-boot-starter-grpc-client")
 	implementation("io.grpc:grpc-protobuf")
@@ -60,6 +61,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testImplementation("org.wiremock.integrations:wiremock-spring-boot:$wiremockSpringBootVersion")
 	testImplementation("com.h2database:h2")
+	testImplementation("org.awaitility:awaitility")
 	testImplementation("au.com.dius.pact.consumer:junit5:4.7.5")
 
 	testCompileOnly("org.projectlombok:lombok")
