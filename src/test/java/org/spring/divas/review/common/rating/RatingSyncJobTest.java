@@ -1,4 +1,4 @@
-package org.spring.divas.review.feature.rating;
+package org.spring.divas.review.common.rating;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

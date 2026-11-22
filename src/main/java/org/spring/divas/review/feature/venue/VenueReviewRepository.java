@@ -1,7 +1,7 @@
 package org.spring.divas.review.feature.venue;
 
 import java.util.List;
-import org.spring.divas.review.feature.rating.RatingStats;
+import org.spring.divas.review.common.rating.RatingStats;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
