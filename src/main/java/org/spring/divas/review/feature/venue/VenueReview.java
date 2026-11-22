@@ -21,6 +21,7 @@ import org.spring.divas.review.common.entity.BaseEntity;
     name = "venue_review",
     uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "venue_id"})
 )
+@SuppressWarnings("java:S2160")
 public class VenueReview extends BaseEntity {
 
   @Column(name = "user_id", nullable = false)

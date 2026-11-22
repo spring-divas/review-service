@@ -16,8 +16,10 @@ import org.spring.divas.review.feature.venue.dto.VenueReviewDeleteParams;
 import org.spring.divas.review.feature.venue.dto.VenueReviewDto;
 import org.spring.divas.review.feature.venue.dto.VenueReviewUpdateParams;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @AllArgsConstructor
 @Service
@@ -29,31 +31,34 @@ public class VenueReviewServiceImpl implements VenueReviewService {
 
   private final UserService userService;
   private final ResilientOrderClient orderClient;
+  private final TransactionTemplate transactionTemplate;
 
   private final ApplicationEventPublisher eventPublisher;
 
   @Override
-  @Transactional
-  public VenueReviewDto create(VenueReviewCreateParams params) { // TODO: check-then-act
+  public VenueReviewDto create(VenueReviewCreateParams params) {
     if (venueReviewRepository.existsByUserIdAndVenueId(params.userId(), params.venueId())) {
       throw new ResourceAlreadyExistsException("Review by the user for this venue already exists");
     }
-    if (!orderClient.hasUserBeenToVenue(params.userId(),
-        params.venueId())) { // TODO: TransactionTemplate
+
+    if (!orderClient.hasUserBeenToVenue(params.userId(), params.venueId())) {
       throw new VenueNotVisitedException("User cannot review the venue they have not visited");
     }
-    VenueReview entityToSave = VenueReviewCreateParams.toEntity(params);
-    VenueReview savedEntity = venueReviewRepository.save(entityToSave);
-    eventPublisher.publishEvent(ratingChanged(savedEntity));
-    return toDto(savedEntity);
+
+    try {
+      return transactionTemplate.execute(status -> {
+        VenueReview saved = venueReviewRepository.saveAndFlush(VenueReviewCreateParams.toEntity(params));
+        eventPublisher.publishEvent(ratingChanged(saved));
+        return toDto(saved);
+      });
+    } catch (DataIntegrityViolationException _) {
+      throw new ResourceAlreadyExistsException("Review by the user for this venue already exists");
+    }
   }
 
   @Override
   public VenueReviewDto getById(Long id) {
-    return venueReviewRepository
-        .findById(id)
-        .map(this::toDto)
-        .orElseThrow(() -> new ResourceNotFoundException("Venue review is not found"));
+    return toDto(findReview(id));
   }
 
   @Override
@@ -70,9 +75,7 @@ public class VenueReviewServiceImpl implements VenueReviewService {
   @Override
   @Transactional
   public VenueReviewDto update(VenueReviewUpdateParams params) {
-    VenueReview review = venueReviewRepository
-        .findById(params.reviewId())
-        .orElseThrow(() -> new ResourceNotFoundException("Venue review is not found"));
+    VenueReview review = findReview(params.reviewId());
 
     if (!ownsReview(params.userId(), review)) {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
@@ -92,19 +95,23 @@ public class VenueReviewServiceImpl implements VenueReviewService {
   @Override
   @Transactional
   public void delete(VenueReviewDeleteParams params) {
-    VenueReview review = venueReviewRepository
-        .findById(params.reviewId())
-        .orElseThrow(() -> new ResourceNotFoundException("Venue review is not found"));
+    VenueReview review = findReview(params.reviewId());
 
-    // if (!ownsReview(params.userId(), review)) {
-    //   throw new ResourceAccessDeniedException("Review does not belong to the user");
-    // }
+    if (!ownsReview(params.userId(), review)) {
+      throw new ResourceAccessDeniedException("Review does not belong to the user");
+    }
     venueReviewRepository.deleteById(params.reviewId());
     eventPublisher.publishEvent(ratingChanged(review));
   }
 
   private RatingChangedEvent ratingChanged(VenueReview review) {
     return new RatingChangedEvent(ReviewTarget.VENUE, review.getVenueId());
+  }
+
+  private VenueReview findReview(Long id) {
+    return venueReviewRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Venue review is not found"));
   }
 
   private VenueReviewDto toDto(VenueReview review) {
