@@ -60,7 +60,8 @@ class CorrelationIdInterceptorTest {
 
   private static ClientHttpRequestExecution mockExecution() throws Exception {
     ClientHttpRequestExecution execution = mock(ClientHttpRequestExecution.class);
-    when(execution.execute(any(), any())).thenReturn(mock(ClientHttpResponse.class));
+    ClientHttpResponse response = mock(ClientHttpResponse.class);
+    when(execution.execute(any(), any())).thenReturn(response);
     return execution;
   }
 }
