@@ -94,10 +94,10 @@ class ChaosMonkeyResilienceTest {
     unleashConnectionFailures();
     orderService.resetRequests();
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 5; i++) {
       createReview(102L)
-          .andExpect(status().isServiceUnavailable())
-          .andExpect(jsonPath("$.detail").value("External service is unavailable"));
+          .andExpect(status().isForbidden())
+          .andExpect(jsonPath("$.detail").value("User cannot rate the dish they have not ordered"));
     }
     assertThat(dishReviewRepository.existsByUserIdAndDishId(USER_ID, 102L)).isFalse();
 
