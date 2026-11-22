@@ -58,6 +58,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     return problem(HttpStatus.SERVICE_UNAVAILABLE, "External service is unavailable");
   }
 
+  @ExceptionHandler(io.github.resilience4j.ratelimiter.RequestNotPermitted.class)
+  public ProblemDetail handleRateLimitExceeded(io.github.resilience4j.ratelimiter.RequestNotPermitted ex) {
+    return problem(HttpStatus.TOO_MANY_REQUESTS, "Rate limit exceeded. Please try again later.");
+  }
+
   @ExceptionHandler(RestClientResponseException.class)
   public ProblemDetail handleExternalServiceError(RestClientResponseException ex) {
     if (ex.getStatusCode().is4xxClientError()) {
