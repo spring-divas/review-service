@@ -113,6 +113,17 @@ class ChaosMonkeyResilienceTest {
     orderService.verify(getRequestedFor(urlPathEqualTo(orderedDishPath)));
   }
 
+  @Test
+  void chaosMonkeyCannotBeControlledOverHttp() throws Exception {
+    mockMvc.perform(post("/actuator/chaosmonkey/enable")).andExpect(status().isNotFound());
+    mockMvc.perform(post("/actuator/chaosmonkey/assaults")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"exceptionsActive\": true}"))
+        .andExpect(status().isNotFound());
+
+    assertThat(chaosMonkey.getChaosMonkeyProperties().isEnabled()).isFalse();
+  }
+
   private void unleashConnectionFailures() {
     AssaultException exception = new AssaultException();
     exception.setType(ResourceAccessException.class.getName());
