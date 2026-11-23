@@ -32,18 +32,18 @@ public class VenueReviewServiceImpl implements VenueReviewService {
   private final ApplicationEventPublisher eventPublisher;
 
   @Override
-  public VenueReviewResponseDto create(VenueReviewRequestDto dto) {
-    if (venueReviewRepository.existsByUserIdAndVenueId(dto.userId(), dto.venueId())) {
+  public VenueReviewResponseDto create(VenueReviewRequestDto dto, Long userId) {
+    if (venueReviewRepository.existsByUserIdAndVenueId(userId, dto.venueId())) {
       throw new ResourceAlreadyExistsException("Review by the user for this venue already exists");
     }
 
-    if (!orderClient.hasUserBeenToVenue(dto.userId(), dto.venueId())) {
+    if (!orderClient.hasUserBeenToVenue(userId, dto.venueId())) {
       throw new VenueNotVisitedException("User cannot review the venue they have not visited");
     }
 
     try {
       return transactionTemplate.execute(status -> {
-        VenueReview saved = venueReviewRepository.saveAndFlush(venueReviewMapper.toEntity(dto));
+        VenueReview saved = venueReviewRepository.saveAndFlush(venueReviewMapper.toEntity(dto, userId));
         eventPublisher.publishEvent(ratingChanged(saved));
         return toDto(saved);
       });
@@ -70,10 +70,10 @@ public class VenueReviewServiceImpl implements VenueReviewService {
 
   @Override
   @Transactional
-  public VenueReviewResponseDto update(Long id, VenueReviewRequestDto dto) {
+  public VenueReviewResponseDto update(Long id, VenueReviewRequestDto dto, Long userId) {
     VenueReview review = findReview(id);
 
-    if (!ownsReview(dto.userId(), review)) {
+    if (!ownsReview(userId, review)) {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
     }
 

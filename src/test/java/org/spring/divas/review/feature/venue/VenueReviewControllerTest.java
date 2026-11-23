@@ -72,10 +72,10 @@ class VenueReviewControllerTest {
     VenueReviewResponseDto dto =
         new VenueReviewResponseDto(
             100L, new UserDto(1L, "Alice Smith"), "Cozy", (short) 4, 20L, LocalDate.of(2026, 1, 2));
-    when(venueReviewService.create(new VenueReviewRequestDto("Cozy", (short) 4, 20L, 1L)))
+    when(venueReviewService.create(new VenueReviewRequestDto("Cozy", (short) 4, 20L), 1L))
         .thenReturn(dto);
 
-    VenueReviewRequestDto request = new VenueReviewRequestDto("Cozy", (short) 4, 20L, 1L);
+    VenueReviewRequestDto request = new VenueReviewRequestDto("Cozy", (short) 4, 20L);
 
     mockMvc
         .perform(
@@ -106,7 +106,7 @@ class VenueReviewControllerTest {
 
   @Test
   void returns400WithFieldErrorsForInvalidReview() throws Exception {
-    VenueReviewRequestDto request = new VenueReviewRequestDto(null, (short) 0, 20L, null);
+    VenueReviewRequestDto request = new VenueReviewRequestDto(null, (short) 0, 20L);
 
     mockMvc
         .perform(
@@ -114,10 +114,9 @@ class VenueReviewControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.errors.rating").exists())
-        .andExpect(jsonPath("$.errors.userId").doesNotExist());
+        .andExpect(jsonPath("$.errors.rating").exists());
 
-    verify(venueReviewService, never()).create(any());
+    verify(venueReviewService, never()).create(any(), any());
   }
 
   @Test
@@ -126,7 +125,7 @@ class VenueReviewControllerTest {
         .perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("{not json"))
         .andExpect(status().isBadRequest());
 
-    verify(venueReviewService, never()).create(any());
+    verify(venueReviewService, never()).create(any(), any());
   }
 
   @Test

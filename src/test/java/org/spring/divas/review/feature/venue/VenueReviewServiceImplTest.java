@@ -63,7 +63,7 @@ class VenueReviewServiceImplTest {
   @Test
   void savesReviewAndPublishesRatingChange() {
     final VenueReviewRequestDto request =
-        new VenueReviewRequestDto("Great atmosphere", (short) 5, 20L, 1L);
+        new VenueReviewRequestDto("Great atmosphere", (short) 5, 20L);
     final VenueReview entity =
         VenueReview.builder()
             .id(100L)
@@ -80,12 +80,12 @@ class VenueReviewServiceImplTest {
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(false);
     when(orderClient.hasUserBeenToVenue(1L, 20L)).thenReturn(true);
     runTransactionCallback();
-    when(venueReviewMapper.toEntity(request)).thenReturn(entity);
+    when(venueReviewMapper.toEntity(request, 1L)).thenReturn(entity);
     when(venueReviewRepository.saveAndFlush(entity)).thenReturn(entity);
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(venueReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    VenueReviewResponseDto result = service.create(request);
+    VenueReviewResponseDto result = service.create(request, 1L);
 
     assertThat(result).isEqualTo(responseDto);
     verify(eventPublisher).publishEvent(any(RatingChangedEvent.class));
@@ -93,10 +93,10 @@ class VenueReviewServiceImplTest {
 
   @Test
   void rejectsSecondReviewBySameUser() {
-    VenueReviewRequestDto request = new VenueReviewRequestDto("Duplicate", (short) 5, 20L, 1L);
+    VenueReviewRequestDto request = new VenueReviewRequestDto("Duplicate", (short) 5, 20L);
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(true);
 
-    assertThatThrownBy(() -> service.create(request))
+    assertThatThrownBy(() -> service.create(request, 1L))
         .isInstanceOf(ResourceAlreadyExistsException.class)
         .hasMessage("Review by the user for this venue already exists");
   }
@@ -104,16 +104,16 @@ class VenueReviewServiceImplTest {
   @Test
   void rejectsConcurrentDuplicateReview() {
     final VenueReviewRequestDto request =
-        new VenueReviewRequestDto("Concurrent duplicate", (short) 5, 20L, 1L);
+        new VenueReviewRequestDto("Concurrent duplicate", (short) 5, 20L);
 
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(false);
     when(orderClient.hasUserBeenToVenue(1L, 20L)).thenReturn(true);
     runTransactionCallback();
-    when(venueReviewMapper.toEntity(request)).thenReturn(new VenueReview());
+    when(venueReviewMapper.toEntity(request, 1L)).thenReturn(new VenueReview());
     when(venueReviewRepository.saveAndFlush(any(VenueReview.class)))
         .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-    assertThatThrownBy(() -> service.create(request))
+    assertThatThrownBy(() -> service.create(request, 1L))
         .isInstanceOf(ResourceAlreadyExistsException.class)
         .hasMessage("Review by the user for this venue already exists");
     verifyNoInteractions(eventPublisher);
@@ -121,11 +121,11 @@ class VenueReviewServiceImplTest {
 
   @Test
   void rejectsReviewOfVenueNotVisited() {
-    VenueReviewRequestDto request = new VenueReviewRequestDto("Not visited", (short) 5, 20L, 1L);
+    VenueReviewRequestDto request = new VenueReviewRequestDto("Not visited", (short) 5, 20L);
     when(venueReviewRepository.existsByUserIdAndVenueId(1L, 20L)).thenReturn(false);
     when(orderClient.hasUserBeenToVenue(1L, 20L)).thenReturn(false);
 
-    assertThatThrownBy(() -> service.create(request))
+    assertThatThrownBy(() -> service.create(request, 1L))
         .isInstanceOf(VenueNotVisitedException.class)
         .hasMessage("User cannot review the venue they have not visited");
   }
@@ -196,7 +196,7 @@ class VenueReviewServiceImplTest {
             .content("Ok")
             .build();
     VenueReviewRequestDto request =
-        new VenueReviewRequestDto("Much better", (short) 4, 20L, 1L);
+        new VenueReviewRequestDto("Much better", (short) 4, 20L);
     UserDto userDto = new UserDto(1L, "Alice Smith");
     VenueReviewResponseDto responseDto =
         new VenueReviewResponseDto(100L, userDto, "Much better", (short) 4, 20L, LocalDate.now());
@@ -205,7 +205,7 @@ class VenueReviewServiceImplTest {
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(venueReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    VenueReviewResponseDto result = service.update(100L, request);
+    VenueReviewResponseDto result = service.update(100L, request, 1L);
 
     assertThat(result).isEqualTo(responseDto);
     assertThat(entity.getRating()).isEqualTo((short) 4);
@@ -224,11 +224,11 @@ class VenueReviewServiceImplTest {
             .content("Ok")
             .build();
     VenueReviewRequestDto request =
-        new VenueReviewRequestDto("Much better", (short) 4, 20L, 1L);
+        new VenueReviewRequestDto("Much better", (short) 4, 20L);
 
     when(venueReviewRepository.findById(100L)).thenReturn(Optional.of(entity));
 
-    assertThatThrownBy(() -> service.update(100L, request))
+    assertThatThrownBy(() -> service.update(100L, request, 1L))
         .isInstanceOf(ResourceAccessDeniedException.class)
         .hasMessage("Review does not belong to the user");
   }

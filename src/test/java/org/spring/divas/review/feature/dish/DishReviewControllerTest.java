@@ -80,10 +80,10 @@ class DishReviewControllerTest {
     DishReviewResponseDto dto =
         new DishReviewResponseDto(
             100L, new UserDto(1L, "John Doe"), "Tasty", (short) 5, 10L, LocalDate.of(2026, 1, 2));
-    when(dishReviewService.create(new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L)))
+    when(dishReviewService.create(new DishReviewRequestDto("Tasty", (short) 5, 10L), 1L))
         .thenReturn(dto);
 
-    DishReviewRequestDto request = new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Tasty", (short) 5, 10L);
 
     mockMvc
         .perform(
@@ -115,7 +115,7 @@ class DishReviewControllerTest {
 
   @Test
   void returns400WithFieldErrorsForInvalidReview() throws Exception {
-    DishReviewRequestDto request = new DishReviewRequestDto(null, (short) 7, null, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto(null, (short) 7, null);
 
     mockMvc
         .perform(
@@ -128,15 +128,15 @@ class DishReviewControllerTest {
         .andExpect(jsonPath("$.errors.dishId").exists())
         .andExpect(jsonPath("$.timestamp").value(notNullValue()));
 
-    verify(dishReviewService, never()).create(any());
+    verify(dishReviewService, never()).create(any(), any());
   }
 
   @Test
   void returns409WhenReviewAlreadyExists() throws Exception {
-    when(dishReviewService.create(any()))
+    when(dishReviewService.create(any(), any()))
         .thenThrow(new ResourceAlreadyExistsException("Review already exists"));
 
-    DishReviewRequestDto request = new DishReviewRequestDto("Again", (short) 4, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Again", (short) 4, 10L);
 
     mockMvc
         .perform(

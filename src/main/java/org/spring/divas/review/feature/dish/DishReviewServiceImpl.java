@@ -30,15 +30,15 @@ public class DishReviewServiceImpl implements DishReviewService {
 
   @Override
   @Transactional
-  public DishReviewResponseDto create(DishReviewRequestDto dto) { // TODO: check-then-act
-    if (dishReviewRepository.existsByUserIdAndDishId(dto.userId(), dto.dishId())) {
+  public DishReviewResponseDto create(DishReviewRequestDto dto, Long userId) { // TODO: check-then-act
+    if (dishReviewRepository.existsByUserIdAndDishId(userId, dto.dishId())) {
       throw new ResourceAlreadyExistsException("Review by the user for this dish already exists");
     }
-    if (!orderClient.hasUserOrderedDish(dto.userId(),
+    if (!orderClient.hasUserOrderedDish(userId,
         dto.dishId())) { // TODO: TransactionTemplate
       throw new DishNotOrderedException("User cannot rate the dish they have not ordered");
     }
-    DishReview entityToSave = dishReviewMapper.toEntity(dto);
+    DishReview entityToSave = dishReviewMapper.toEntity(dto, userId);
     DishReview savedEntity = dishReviewRepository.save(entityToSave);
     eventPublisher.publishEvent(ratingChanged(savedEntity));
     return toDto(savedEntity);
@@ -62,10 +62,10 @@ public class DishReviewServiceImpl implements DishReviewService {
 
   @Override
   @Transactional
-  public DishReviewResponseDto update(Long id, DishReviewRequestDto dto) {
+  public DishReviewResponseDto update(Long id, DishReviewRequestDto dto, Long userId) {
     DishReview review = findReview(id);
 
-    if (!ownsReview(dto.userId(), review)) {
+    if (!ownsReview(userId, review)) {
       throw new ResourceAccessDeniedException("Review does not belong to the user");
     }
 
