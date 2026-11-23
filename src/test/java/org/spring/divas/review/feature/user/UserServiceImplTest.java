@@ -61,7 +61,6 @@ class UserServiceImplTest {
 
     Map<Long, UserDto> result = userService.getByIds(List.of(1L, 2L));
 
-    assertThat(result).containsEntry(1L, dto1);
-    assertThat(result).containsEntry(2L, dto2);
+    assertThat(result).containsEntry(1L, dto1).containsEntry(2L, dto2);
   }
 }

@@ -1,7 +1,6 @@
 package org.spring.divas.review.feature;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -91,7 +90,7 @@ class ReviewControllerSecurityTest {
     mockMvc.perform(delete("/review/venue/{id}", 5L).with(customer()))
         .andExpect(status().isNoContent());
 
-    verify(venueReviewService).delete(eq(5L), eq(10L));
+    verify(venueReviewService).delete(5L, 10L);
   }
 
   @Test

@@ -3,6 +3,7 @@ package org.spring.divas.review.feature.dish;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -25,6 +26,10 @@ import org.spring.divas.review.feature.order.ResilientOrderClient;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class DishReviewServiceImplTest {
@@ -37,6 +42,8 @@ class DishReviewServiceImplTest {
 
   @Mock private ResilientOrderClient orderClient;
 
+  @Mock private TransactionTemplate transactionTemplate;
+
   @Mock private ApplicationEventPublisher eventPublisher;
 
   private DishReviewServiceImpl service;
@@ -45,7 +52,12 @@ class DishReviewServiceImplTest {
   void setUp() {
     service =
         new DishReviewServiceImpl(
-            dishReviewRepository, dishReviewMapper, userService, orderClient, eventPublisher);
+            dishReviewRepository,
+            dishReviewMapper,
+            userService,
+            orderClient,
+            transactionTemplate,
+            eventPublisher);
   }
 
   @Test
@@ -60,13 +72,14 @@ class DishReviewServiceImplTest {
             .content("Amazing pasta")
             .build();
     UserDto userDto = new UserDto(1L, "John Doe");
-    DishReviewResponseDto responseDto =
+    final DishReviewResponseDto responseDto =
         new DishReviewResponseDto(100L, userDto, "Amazing pasta", (short) 5, 10L, LocalDate.now());
 
     when(dishReviewRepository.existsByUserIdAndDishId(1L, 10L)).thenReturn(false);
     when(orderClient.hasUserOrderedDish(1L, 10L)).thenReturn(true);
     when(dishReviewMapper.toEntity(request, 1L)).thenReturn(entity);
-    when(dishReviewRepository.save(entity)).thenReturn(entity);
+    runTransactionCallback();
+    when(dishReviewRepository.saveAndFlush(entity)).thenReturn(entity);
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(dishReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
@@ -84,6 +97,24 @@ class DishReviewServiceImplTest {
     assertThatThrownBy(() -> service.create(request, 1L))
         .isInstanceOf(ResourceAlreadyExistsException.class)
         .hasMessage("Review by the user for this dish already exists");
+  }
+
+  @Test
+  void rejectsConcurrentDuplicateReview() {
+    final DishReviewRequestDto request =
+        new DishReviewRequestDto("Concurrent duplicate", (short) 5, 10L);
+
+    when(dishReviewRepository.existsByUserIdAndDishId(1L, 10L)).thenReturn(false);
+    when(orderClient.hasUserOrderedDish(1L, 10L)).thenReturn(true);
+    runTransactionCallback();
+    when(dishReviewMapper.toEntity(request, 1L)).thenReturn(new DishReview());
+    when(dishReviewRepository.saveAndFlush(any(DishReview.class)))
+        .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+    assertThatThrownBy(() -> service.create(request, 1L))
+        .isInstanceOf(ResourceAlreadyExistsException.class)
+        .hasMessage("Review by the user for this dish already exists");
+    verifyNoInteractions(eventPublisher);
   }
 
   @Test
@@ -237,5 +268,14 @@ class DishReviewServiceImplTest {
         .hasMessage("Dish review is not found");
     verify(dishReviewRepository, never()).deleteById(any());
     verifyNoInteractions(eventPublisher);
+  }
+
+  private void runTransactionCallback() {
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(
+            invocation -> {
+              TransactionCallback<?> callback = invocation.getArgument(0);
+              return callback.doInTransaction(mock(TransactionStatus.class));
+            });
   }
 }
