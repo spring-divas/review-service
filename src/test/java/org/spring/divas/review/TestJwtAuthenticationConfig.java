@@ -26,7 +26,7 @@ public class TestJwtAuthenticationConfig {
 
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
-  SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+  SecurityFilterChain testSecurityFilterChain(HttpSecurity http) {
     return http.csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
         .build();
