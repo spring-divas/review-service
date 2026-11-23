@@ -1,5 +1,6 @@
 package org.spring.divas.review;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -110,7 +112,8 @@ class ChaosMonkeyResilienceTest {
         .pollInterval(Duration.ofMillis(200))
         .untilAsserted(() -> createReview(103L).andExpect(status().isCreated()));
     assertThat(circuitBreaker.getState()).isNotEqualTo(CircuitBreaker.State.OPEN);
-    orderService.verify(getRequestedFor(urlPathEqualTo(orderedDishPath)));
+    orderService.verify(getRequestedFor(urlPathEqualTo(orderedDishPath))
+        .withHeader(HttpHeaders.AUTHORIZATION, equalTo("Bearer " + TestJwt.TOKEN_VALUE)));
   }
 
   @Test
@@ -138,7 +141,7 @@ class ChaosMonkeyResilienceTest {
   private ResultActions createReview(long dishId) throws Exception {
     return mockMvc.perform(post(dishReviewPath)
         .contentType(MediaType.APPLICATION_JSON)
-        .content("{\"content\": \"Tasty\", \"rating\": 5, \"dishId\": %d, \"userId\": %d}"
-            .formatted(dishId, USER_ID)));
+        .with(TestJwt.customer(USER_ID))
+        .content("{\"content\": \"Tasty\", \"rating\": 5, \"dishId\": %d}".formatted(dishId)));
   }
 }

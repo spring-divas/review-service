@@ -8,8 +8,7 @@ import jakarta.validation.constraints.NotNull;
 public record VenueReviewRequestDto(
     @Nullable String content,
     @NotNull @Min(1) @Max(5) Short rating,
-    @NotNull Long venueId,
-    @NotNull Long userId
+    @NotNull Long venueId
 ) {
 
 }

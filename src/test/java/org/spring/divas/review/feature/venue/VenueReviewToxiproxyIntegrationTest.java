@@ -9,6 +9,7 @@ import eu.rekawek.toxiproxy.model.ToxicDirection;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.spring.divas.review.TestJwt;
 import org.spring.divas.review.feature.AbstractToxiproxyIntegrationTest;
 import org.spring.divas.review.feature.order.ResilientOrderClient;
 import org.spring.divas.review.feature.user.UserDto;
@@ -39,10 +40,11 @@ class VenueReviewToxiproxyIntegrationTest extends AbstractToxiproxyIntegrationTe
 
   @Test
   void createsVenueReviewThroughPostgresProxy() throws Exception {
-    VenueReviewRequestDto request = new VenueReviewRequestDto("Cozy", (short) 4, 42L, 1L);
+    VenueReviewRequestDto request = new VenueReviewRequestDto("Cozy", (short) 4, 42L);
     when(orderClient.hasUserBeenToVenue(1L, 42L)).thenReturn(true);
     when(userService.findById(1L)).thenReturn(Optional.of(new UserDto(1L, "Alice Smith")));
     mockMvc.perform(post("/review/venue")
+            .with(TestJwt.customer(1L))
             .contentType(MediaType.APPLICATION_JSON)
             .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isCreated())
@@ -56,8 +58,9 @@ class VenueReviewToxiproxyIntegrationTest extends AbstractToxiproxyIntegrationTe
     POSTGRES_PROXY.toxics().timeout("postgres-response-timeout", ToxicDirection.DOWNSTREAM, 0);
     evictConnections();
     mockMvc.perform(post("/review/venue")
+            .with(TestJwt.customer(1L))
             .contentType(MediaType.APPLICATION_JSON)
-            .content(jsonMapper.writeValueAsString(new VenueReviewRequestDto("Cozy", (short) 4, 42L, 1L))))
+            .content(jsonMapper.writeValueAsString(new VenueReviewRequestDto("Cozy", (short) 4, 42L))))
         .andExpect(status().isInternalServerError())
         .andExpect(jsonPath("$.title").value("Internal Server Error"));
   }
