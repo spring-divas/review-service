@@ -6,6 +6,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -30,6 +31,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
@@ -45,6 +47,11 @@ import tools.jackson.databind.json.JsonMapper;
 class DishReviewControllerTest {
 
   private static final String URL = "/review/dish";
+
+  private static final String REQUEST_WITHOUT_USER_ID =
+      """
+      {"content": "Tasty", "rating": 5, "dishId": 10}
+      """;
 
   @Autowired private MockMvc mockMvc;
 
@@ -86,6 +93,24 @@ class DishReviewControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(100))
         .andExpect(jsonPath("$.rating").value(5));
+  }
+
+  @Test
+  void returns201WithAuthorFromTokenWhenBodyHasNoUserId() throws Exception {
+    when(dishReviewService.create(new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L)))
+        .thenReturn(new DishReviewResponseDto(
+            100L, new UserDto(1L, "John Doe"), "Tasty", (short) 5, 10L, LocalDate.of(2026, 1, 2)));
+
+    mockMvc
+        .perform(
+            post(URL)
+                .with(jwt().jwt(token -> token.subject("1"))
+                    .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(REQUEST_WITHOUT_USER_ID))
+        .andExpect(status().isCreated());
+
+    verify(dishReviewService).create(new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L));
   }
 
   @Test

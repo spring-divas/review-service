@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,6 +24,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
@@ -38,6 +40,11 @@ import tools.jackson.databind.json.JsonMapper;
 class VenueReviewControllerTest {
 
   private static final String URL = "/review/venue";
+
+  private static final String REQUEST_WITHOUT_USER_ID =
+      """
+      {"content": "Tasty", "rating": 5, "venueId": 10}
+      """;
 
   @Autowired private MockMvc mockMvc;
 
@@ -80,6 +87,24 @@ class VenueReviewControllerTest {
   }
 
   @Test
+  void returns201WithAuthorFromTokenWhenBodyHasNoUserId() throws Exception {
+    when(venueReviewService.create(new VenueReviewRequestDto("Tasty", (short) 5, 10L, 1L)))
+        .thenReturn(new VenueReviewResponseDto(
+            100L, new UserDto(1L, "Alice Smith"), "Tasty", (short) 5, 10L, LocalDate.of(2026, 1, 2)));
+
+    mockMvc
+        .perform(
+            post(URL)
+                .with(jwt().jwt(token -> token.subject("1"))
+                    .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(REQUEST_WITHOUT_USER_ID))
+        .andExpect(status().isCreated());
+
+    verify(venueReviewService).create(new VenueReviewRequestDto("Tasty", (short) 5, 10L, 1L));
+  }
+
+  @Test
   void returns400WithFieldErrorsForInvalidReview() throws Exception {
     VenueReviewRequestDto request = new VenueReviewRequestDto(null, (short) 0, 20L, null);
 
@@ -90,7 +115,7 @@ class VenueReviewControllerTest {
                 .content(jsonMapper.writeValueAsString(request)))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors.rating").exists())
-        .andExpect(jsonPath("$.errors.userId").exists());
+        .andExpect(jsonPath("$.errors.userId").doesNotExist());
 
     verify(venueReviewService, never()).create(any());
   }
