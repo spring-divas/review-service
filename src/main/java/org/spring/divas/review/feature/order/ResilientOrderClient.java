@@ -18,14 +18,14 @@ public class ResilientOrderClient {
   @CircuitBreaker(name = "orderClient", fallbackMethod = "orderCheckFallback")
   @Bulkhead(name = "orderClient")
   public boolean hasUserOrderedDish(Long userId, Long dishId) {
-    return orderClient.hasUserOrderedDish(userId, dishId);
+    return orderClient.hasUserOrderedDish(dishId);
   }
 
   @Retry(name = "orderClient")
   @CircuitBreaker(name = "orderClient", fallbackMethod = "orderCheckFallback")
   @Bulkhead(name = "orderClient")
   public boolean hasUserBeenToVenue(Long userId, Long venueId) {
-    return orderClient.hasUserBeenToVenue(userId, venueId);
+    return orderClient.hasUserBeenToVenue(venueId);
   }
 
   private boolean orderCheckFallback(Long userId, Long targetId, Throwable throwable) {

@@ -13,10 +13,14 @@ services:
       - review_postgres_data:/var/lib/postgresql
 
   backend:
+    networks:
+      - feedo
     build: .
     container_name: ${PROJECT_BASE_NAME}_backend
     env_file:
       - .env
+    environment:
+      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:8080}
     ports:
       - "${BACKEND_PORT}:8080"
     restart: on-failure:3
@@ -26,3 +30,8 @@ services:
 
 volumes:
   review_postgres_data:
+
+networks:
+  feedo:
+    name: feedo
+    driver: bridge

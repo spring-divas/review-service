@@ -24,7 +24,6 @@ class OrderPactTest {
         .expectsToReceiveHttpInteraction("a request to check a dish order", interaction -> interaction
             .withRequest(request -> request
                 .path("/api/order/exists/dish")
-                .queryParameter("userId", "123")
                 .queryParameter("dishId", "456")
                 .method("GET"))
             .willRespondWith(response -> response
@@ -33,7 +32,6 @@ class OrderPactTest {
         .expectsToReceiveHttpInteraction("a request to check a venue visit", interaction -> interaction
             .withRequest(request -> request
                 .path("/api/order/exists/venue")
-                .queryParameter("userId", "123")
                 .queryParameter("venueId", "456")
                 .method("GET"))
             .willRespondWith(response -> response
@@ -46,7 +44,7 @@ class OrderPactTest {
   @PactTestFor(pactMethod = "createOrderPact")
   void clientReadsReviewEligibilityFromContract(MockServer mockServer) {
     OrderClient client = ClientFactory.create(RestClient.builder(), mockServer.getUrl(), OrderClient.class);
-    assertThat(client.hasUserOrderedDish(123L, 456L)).isTrue();
-    assertThat(client.hasUserBeenToVenue(123L, 456L)).isTrue();
+    assertThat(client.hasUserOrderedDish(456L)).isTrue();
+    assertThat(client.hasUserBeenToVenue(456L)).isTrue();
   }
 }
