@@ -50,7 +50,7 @@ class DishReviewServiceImplTest {
 
   @Test
   void savesReviewAndPublishesRatingChange() {
-    DishReviewRequestDto request = new DishReviewRequestDto("Amazing pasta", (short) 5, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Amazing pasta", (short) 5, 10L);
     DishReview entity =
         DishReview.builder()
             .id(100L)
@@ -65,12 +65,12 @@ class DishReviewServiceImplTest {
 
     when(dishReviewRepository.existsByUserIdAndDishId(1L, 10L)).thenReturn(false);
     when(orderClient.hasUserOrderedDish(1L, 10L)).thenReturn(true);
-    when(dishReviewMapper.toEntity(request)).thenReturn(entity);
+    when(dishReviewMapper.toEntity(request, 1L)).thenReturn(entity);
     when(dishReviewRepository.save(entity)).thenReturn(entity);
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(dishReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    DishReviewResponseDto result = service.create(request);
+    DishReviewResponseDto result = service.create(request, 1L);
 
     assertThat(result).isEqualTo(responseDto);
     verify(eventPublisher).publishEvent(any(RatingChangedEvent.class));
@@ -78,21 +78,21 @@ class DishReviewServiceImplTest {
 
   @Test
   void rejectsSecondReviewBySameUser() {
-    DishReviewRequestDto request = new DishReviewRequestDto("Duplicate", (short) 5, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Duplicate", (short) 5, 10L);
     when(dishReviewRepository.existsByUserIdAndDishId(1L, 10L)).thenReturn(true);
 
-    assertThatThrownBy(() -> service.create(request))
+    assertThatThrownBy(() -> service.create(request, 1L))
         .isInstanceOf(ResourceAlreadyExistsException.class)
         .hasMessage("Review by the user for this dish already exists");
   }
 
   @Test
   void rejectsReviewOfDishNotOrdered() {
-    DishReviewRequestDto request = new DishReviewRequestDto("Not ordered", (short) 5, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Not ordered", (short) 5, 10L);
     when(dishReviewRepository.existsByUserIdAndDishId(1L, 10L)).thenReturn(false);
     when(orderClient.hasUserOrderedDish(1L, 10L)).thenReturn(false);
 
-    assertThatThrownBy(() -> service.create(request))
+    assertThatThrownBy(() -> service.create(request, 1L))
         .isInstanceOf(DishNotOrderedException.class)
         .hasMessage("User cannot rate the dish they have not ordered");
   }
@@ -163,7 +163,7 @@ class DishReviewServiceImplTest {
             .content("Old")
             .build();
     DishReviewRequestDto request =
-        new DishReviewRequestDto("Updated content", (short) 5, 10L, 1L);
+        new DishReviewRequestDto("Updated content", (short) 5, 10L);
     UserDto userDto = new UserDto(1L, "John Doe");
     DishReviewResponseDto responseDto =
         new DishReviewResponseDto(
@@ -173,7 +173,7 @@ class DishReviewServiceImplTest {
     when(userService.findById(1L)).thenReturn(Optional.of(userDto));
     when(dishReviewMapper.toDto(entity, userDto)).thenReturn(responseDto);
 
-    DishReviewResponseDto result = service.update(100L, request);
+    DishReviewResponseDto result = service.update(100L, request, 1L);
 
     assertThat(result).isEqualTo(responseDto);
     assertThat(entity.getRating()).isEqualTo((short) 5);
@@ -191,11 +191,11 @@ class DishReviewServiceImplTest {
             .rating((short) 4)
             .content("Old")
             .build();
-    DishReviewRequestDto request = new DishReviewRequestDto("Updated", (short) 5, 10L, 1L);
+    DishReviewRequestDto request = new DishReviewRequestDto("Updated", (short) 5, 10L);
 
     when(dishReviewRepository.findById(100L)).thenReturn(Optional.of(entity));
 
-    assertThatThrownBy(() -> service.update(100L, request))
+    assertThatThrownBy(() -> service.update(100L, request, 1L))
         .isInstanceOf(ResourceAccessDeniedException.class)
         .hasMessage("Review does not belong to the user");
   }
