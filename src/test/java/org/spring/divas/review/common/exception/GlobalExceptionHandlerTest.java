@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 
@@ -93,6 +94,14 @@ class GlobalExceptionHandlerTest {
     ProblemDetail problem = handler.handleExternalServiceRejected(ex);
 
     assertProblem(problem, HttpStatus.SERVICE_UNAVAILABLE, "External service is unavailable");
+  }
+
+  @Test
+  void mapsSecurityAccessDeniedTo403() {
+    ProblemDetail problem = handler.handleSecurityAccessDenied(
+        new AccessDeniedException("Access Denied"));
+
+    assertProblem(problem, HttpStatus.FORBIDDEN, "Access Denied");
   }
 
   @Test
