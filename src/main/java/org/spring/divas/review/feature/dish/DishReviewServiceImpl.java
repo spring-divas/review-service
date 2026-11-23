@@ -12,8 +12,10 @@ import org.spring.divas.review.feature.order.ResilientOrderClient;
 import org.spring.divas.review.feature.user.UserDto;
 import org.spring.divas.review.feature.user.UserService;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @AllArgsConstructor
 @Service
@@ -25,23 +27,29 @@ public class DishReviewServiceImpl implements DishReviewService {
 
   private final UserService userService;
   private final ResilientOrderClient orderClient;
+  private final TransactionTemplate transactionTemplate;
 
   private final ApplicationEventPublisher eventPublisher;
 
   @Override
-  @Transactional
-  public DishReviewResponseDto create(DishReviewRequestDto dto, Long userId) { // TODO: check-then-act
+  public DishReviewResponseDto create(DishReviewRequestDto dto, Long userId) {
     if (dishReviewRepository.existsByUserIdAndDishId(userId, dto.dishId())) {
       throw new ResourceAlreadyExistsException("Review by the user for this dish already exists");
     }
-    if (!orderClient.hasUserOrderedDish(userId,
-        dto.dishId())) { // TODO: TransactionTemplate
+
+    if (!orderClient.hasUserOrderedDish(userId, dto.dishId())) {
       throw new DishNotOrderedException("User cannot rate the dish they have not ordered");
     }
-    DishReview entityToSave = dishReviewMapper.toEntity(dto, userId);
-    DishReview savedEntity = dishReviewRepository.save(entityToSave);
-    eventPublisher.publishEvent(ratingChanged(savedEntity));
-    return toDto(savedEntity);
+
+    try {
+      return transactionTemplate.execute(_ -> {
+        DishReview saved = dishReviewRepository.saveAndFlush(dishReviewMapper.toEntity(dto, userId));
+        eventPublisher.publishEvent(ratingChanged(saved));
+        return toDto(saved);
+      });
+    } catch (DataIntegrityViolationException _) {
+      throw new ResourceAlreadyExistsException("Review by the user for this dish already exists");
+    }
   }
 
   @Override
