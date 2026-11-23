@@ -20,6 +20,8 @@ val grpcVersion = "1.84.1"
 val logstashLogbackEncoderVersion = "9.0"
 val checkstyleVersion = "13.7.0"
 val testcontainersVersion = "2.0.5"
+val pactVersion = "4.7.5"
+val chaosMonkeyVersion = "4.0.0"
 
 java {
 	toolchain {
@@ -39,7 +41,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-restclient")
 	implementation("org.springframework.boot:spring-boot-starter-aspectj")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("de.codecentric:chaos-monkey-spring-boot:4.0.0")
+	implementation("de.codecentric:chaos-monkey-spring-boot:$chaosMonkeyVersion")
 	implementation("org.springframework.boot:spring-boot-starter-opentelemetry")
 	implementation("org.springframework.boot:spring-boot-starter-grpc-client")
 	implementation("io.grpc:grpc-protobuf")
@@ -64,7 +66,7 @@ dependencies {
 	testImplementation("org.wiremock.integrations:wiremock-spring-boot:$wiremockSpringBootVersion")
 	testImplementation("com.h2database:h2")
 	testImplementation("org.awaitility:awaitility")
-	testImplementation("au.com.dius.pact.consumer:junit5:4.7.5")
+	testImplementation("au.com.dius.pact.consumer:junit5:$pactVersion")
 	testImplementation("org.testcontainers:testcontainers-postgresql:$testcontainersVersion")
 	testImplementation("org.testcontainers:testcontainers-toxiproxy:$testcontainersVersion")
 
