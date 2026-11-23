@@ -19,6 +19,7 @@ val protobufVersion = "4.36.2"
 val grpcVersion = "1.84.1"
 val logstashLogbackEncoderVersion = "9.0"
 val checkstyleVersion = "13.7.0"
+val testcontainersVersion = "2.0.5"
 
 java {
 	toolchain {
@@ -63,6 +64,8 @@ dependencies {
 	testImplementation("com.h2database:h2")
 	testImplementation("org.awaitility:awaitility")
 	testImplementation("au.com.dius.pact.consumer:junit5:4.7.5")
+	testImplementation("org.testcontainers:testcontainers-postgresql:$testcontainersVersion")
+	testImplementation("org.testcontainers:testcontainers-toxiproxy:$testcontainersVersion")
 
 	testCompileOnly("org.projectlombok:lombok")
 
