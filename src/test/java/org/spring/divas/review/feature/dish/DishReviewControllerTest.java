@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.spring.divas.review.TestJwtAuthenticationConfig;
 import org.spring.divas.review.common.exception.ResourceAccessDeniedException;
 import org.spring.divas.review.common.exception.ResourceAlreadyExistsException;
 import org.spring.divas.review.common.exception.ResourceNotFoundException;
@@ -23,9 +24,11 @@ import org.spring.divas.review.config.CorrelationIdContext;
 import org.spring.divas.review.config.RateLimitFilter;
 import org.spring.divas.review.feature.user.UserDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,9 +36,12 @@ import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(
     controllers = DishReviewController.class,
+    properties = "security.jwt.enabled=false",
     excludeFilters = @ComponentScan.Filter(
         type = FilterType.ASSIGNABLE_TYPE, classes = RateLimitFilter.class)
 )
+@AutoConfigureMockMvc
+@Import(TestJwtAuthenticationConfig.class)
 class DishReviewControllerTest {
 
   private static final String URL = "/review/dish";

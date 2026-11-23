@@ -18,14 +18,14 @@ class ResilientOrderClientTest {
 
   @Test
   void checksDishOrderViaOrderClient() {
-    when(orderClient.hasUserOrderedDish(1L, 10L)).thenReturn(true);
+    when(orderClient.hasUserOrderedDish(10L)).thenReturn(true);
 
     assertThat(resilientOrderClient.hasUserOrderedDish(1L, 10L)).isTrue();
   }
 
   @Test
   void checksVenueVisitViaOrderClient() {
-    when(orderClient.hasUserBeenToVenue(1L, 20L)).thenReturn(false);
+    when(orderClient.hasUserBeenToVenue(20L)).thenReturn(false);
 
     assertThat(resilientOrderClient.hasUserBeenToVenue(1L, 20L)).isFalse();
   }
