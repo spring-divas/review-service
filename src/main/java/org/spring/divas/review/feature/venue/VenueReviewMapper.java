@@ -16,5 +16,5 @@ public interface VenueReviewMapper {
   @BeanMapping(builder = @Builder(disableBuilder = true))
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  VenueReview toEntity(VenueReviewRequestDto dto);
+  VenueReview toEntity(VenueReviewRequestDto dto, Long userId);
 }

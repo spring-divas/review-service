@@ -102,7 +102,7 @@ class MapperTest {
   void mapsDishReviewRequestToEntity() {
     DishReview review =
         new DishReviewMapperImpl()
-            .toEntity(new DishReviewRequestDto("Tasty", (short) 5, 10L, 1L));
+            .toEntity(new DishReviewRequestDto("Tasty", (short) 5, 10L), 1L);
 
     assertThat(review.getId()).isNull();
     assertThat(review.getContent()).isEqualTo("Tasty");
@@ -115,7 +115,7 @@ class MapperTest {
   void mapsVenueReviewRequestToEntity() {
     VenueReview review =
         new VenueReviewMapperImpl()
-            .toEntity(new VenueReviewRequestDto("Cozy", (short) 4, 20L, 1L));
+            .toEntity(new VenueReviewRequestDto("Cozy", (short) 4, 20L), 1L);
 
     assertThat(review.getId()).isNull();
     assertThat(review.getContent()).isEqualTo("Cozy");

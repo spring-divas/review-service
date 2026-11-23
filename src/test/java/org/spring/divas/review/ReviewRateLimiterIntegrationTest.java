@@ -30,7 +30,7 @@ class ReviewRateLimiterIntegrationTest {
 
   private static final String DISH_REVIEW_JSON =
       """
-      {"content": "Tasty", "rating": 5, "dishId": 1, "userId": 1}
+      {"content": "Tasty", "rating": 5, "dishId": 1}
       """;
 
   @Autowired
@@ -63,6 +63,7 @@ class ReviewRateLimiterIntegrationTest {
 
   private MockHttpServletRequestBuilder createDishReview() {
     return post("/review/dish")
+        .with(TestJwt.customer(1L))
         .contentType(MediaType.APPLICATION_JSON)
         .content(DISH_REVIEW_JSON);
   }

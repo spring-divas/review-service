@@ -63,6 +63,7 @@ dependencies {
 
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.springframework.security:spring-security-test")
 	testImplementation("org.wiremock.integrations:wiremock-spring-boot:$wiremockSpringBootVersion")
 	testImplementation("com.h2database:h2")
 	testImplementation("org.awaitility:awaitility")
